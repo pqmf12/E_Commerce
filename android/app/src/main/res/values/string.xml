@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">opencart_ecommapp1</string>
+    <string name="facebook_app_id">250090607724300</string>
+    <string name="fb_login_protocol_scheme">fb250090607724300</string>
+    <string name="facebook_client_token">8cd300c27091d40cc74d09dd1637ac9f</string>
+</resources>
