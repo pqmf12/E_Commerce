@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-
 part 'DioSignIn.g.dart';
 
 @JsonSerializable()
@@ -30,9 +29,9 @@ class  UserInfo{
   dynamic lastname;
   dynamic email ;
   dynamic telephone ;
-  dynamic fax ;
+  dynamic fax;
   dynamic cart;
-  dynamic wishlist;
+  List<String>? wishlist;
   dynamic newsletter;
   dynamic address_id;
   dynamic custom_field;
@@ -42,7 +41,7 @@ class  UserInfo{
   dynamic safe;
   dynamic code;
   dynamic date_added;
-  dynamic custom_fields;
+  List<String>? custom_fields;
    dynamic account_custom_field;
   dynamic wishlist_total;
   dynamic cart_count_products;

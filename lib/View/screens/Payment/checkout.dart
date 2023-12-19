@@ -1,4 +1,11 @@
+import 'dart:convert';
+import 'package:http/http.dart' show get;
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
+
+import '../../../Models/Payment/DAOPaymentAddress.dart';
+import '../../../Utils/InMemory.dart';
 
 class CheckOutPage extends StatefulWidget {
   const CheckOutPage({Key? key}) : super(key: key);
@@ -26,6 +33,32 @@ class _CheckOutPageState extends State<CheckOutPage> {
   bool visibility5 = false;
 
   bool isChecked = false;
+  String SessionId = "";
+
+  AddressData? getpayadd;
+  List<AddressDetails> addresses = [];
+
+  int logStatus = 0;
+  String islogged = "";
+
+  @override
+  void initState() {
+    fetchLogged();
+    super.initState();
+  }
+
+  void fetchLogged() {
+    print("fetching logged");
+    InMemory().init().then((value) {
+      // if (isDisposed) return;
+      if (InMemory.isLogged) {
+        logStatus = 1;
+      } else {
+        logStatus = 2;
+      }
+      setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +93,9 @@ class _CheckOutPageState extends State<CheckOutPage> {
                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                        children: [
                          Padding(
-                                     padding:  EdgeInsets.only(top: 6,left: 12),
-                                     child: Text("Customer Details",
-                                     style: TextStyle(fontWeight: FontWeight.w500,fontSize: 20,color: Colors.black),),
+                           padding:  EdgeInsets.only(top: 6,left: 12),
+                           child: Text("Customer Details",
+                             style: TextStyle(fontWeight: FontWeight.w500,fontSize: 20,color: Colors.black),),
                                    ),
                            Icon(Icons.arrow_drop_down_outlined),
                        ],
@@ -72,8 +105,8 @@ class _CheckOutPageState extends State<CheckOutPage> {
                 Visibility(
                   visible: visibility,
                   child: CustomerDetails(
-                    firstnameController: firstnameController,
-                    lastnameController: lastnameController,),
+                    first : firstnameController,
+                    last : lastnameController,),
                 ),
                 InkWell(
                   onTap: () {
@@ -221,10 +254,7 @@ class _CheckOutPageState extends State<CheckOutPage> {
                           shape: RoundedRectangleBorder( //to set border radius to button
                               borderRadius: BorderRadius.circular(12)),// foreground (text) color
                         ),
-                        onPressed: (){
-                          if (_formKey.currentState!.validate()) {
-                          }
-                        },
+                        onPressed: (){},
                         child:  Text("Make Payment",
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
@@ -380,8 +410,8 @@ class OrderSummary extends StatelessWidget {
   }
 }
 
-class DeliveryDetails extends StatelessWidget {
-  const DeliveryDetails({
+class DeliveryDetails extends StatefulWidget {
+   DeliveryDetails({
     super.key,
     required this.addressController,
     required this.zipController,
@@ -391,17 +421,62 @@ class DeliveryDetails extends StatelessWidget {
   final TextEditingController zipController;
 
   @override
+  State<DeliveryDetails> createState() => _DeliveryDetailsState();
+}
+
+class _DeliveryDetailsState extends State<DeliveryDetails> {
+  String SessionId = "";
+  AddressData paymentaddresses = AddressData();
+  List<AddressDetails> addresses = [];
+  bool loaded = false;
+
+   @override
+   void initState() {
+     getpayment();
+     super.initState();
+   }
+
+   void getpayment() async{
+     final client = RestClient(Dio());
+     print("getpayment called");
+     SessionId = await InMemory().getSession();
+     client.paymentaddress(
+       "123",
+       SessionId,
+       "application/json",
+       'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',)
+         .then((value) {
+       if  (value.success == 1){
+         print("getpayment sucees");
+         paymentaddresses = value.data!;
+         addresses.addAll(paymentaddresses.addresses!);
+         print(SessionId);
+         print(JsonEncoder().convert(paymentaddresses));
+         print(JsonEncoder().convert(addresses));
+       }else{
+         print("fail");
+       }
+       setState(() {
+         loaded = true;
+       });
+     });
+   }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
+    return (!loaded)
+      ? Center(child: CircularProgressIndicator())
+      : Container(
       child: Column(
         children: [
           Row(
             children: [
               SizedBox(width: 10,),
-              Text("Street Address",
-                style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+              Text("Address line 1",
+                style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
             ],
           ),
+          for (var i in addresses)
           Container(
             height: 45,
             decoration: BoxDecoration(
@@ -421,7 +496,8 @@ class DeliveryDetails extends StatelessWidget {
                 }
                 return null;
               },
-              controller: addressController,
+              initialValue: "${i.address_1}",
+              // controller: widget.addressController,
               decoration: InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.only(top: 15,left: 15.0),
@@ -433,10 +509,11 @@ class DeliveryDetails extends StatelessWidget {
           Row(
             children: [
               SizedBox(width: 10,),
-              Text("State",
-                style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+              Text("Address line 2",
+                style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
             ],
           ),
+          for (var i in addresses)
           Container(
             height: 45,
             decoration: BoxDecoration(
@@ -445,48 +522,6 @@ class DeliveryDetails extends StatelessWidget {
                   BoxShadow(
                       offset: Offset(1,1),
                       blurRadius: 1,
-                      color: Colors.grey
-                  ),
-                ]
-            ),
-          ),
-          SizedBox(height: 8,),
-          Row(
-            children: [
-              SizedBox(width: 10,),
-              Text("City",
-                style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-            ],
-          ),
-          Container(
-            height: 45,
-            decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      offset: Offset(1,1),
-                      blurRadius: 1,
-                      color: Colors.grey
-                  ),
-                ]
-            ),
-          ),
-          SizedBox(height: 8,),
-          Row(
-            children: [
-              SizedBox(width: 10,),
-              Text("Zip Code",
-                style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-            ],
-          ),
-          Container(
-            height: 45,
-            decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      offset: Offset(1,1),
-                      blurRadius: 2,
                       color: Colors.grey
                   ),
                 ]
@@ -498,14 +533,127 @@ class DeliveryDetails extends StatelessWidget {
                 }
                 return null;
               },
-              controller: zipController,
+              initialValue: "${i.address_2}",
+              // controller: widget.addressController,
               decoration: InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                // labelText: "Zip Code"
+                // labelText: "Street Address"
               ),
             ),
           ),
+          SizedBox(height: 8,),
+          Row(
+            children: [
+              SizedBox(width: 10,),
+              Text("Postcode",
+                style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
+            ],
+          ),
+          for (var i in addresses)
+            Container(
+              height: 45,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                        offset: Offset(1,1),
+                        blurRadius: 1,
+                        color: Colors.grey
+                    ),
+                  ]
+              ),
+              child: TextFormField(
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Required field';
+                  }
+                  return null;
+                },
+                initialValue: "${i.postcode}",
+                // controller: widget.addressController,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                  // labelText: "Street Address"
+                ),
+              ),
+            ),
+          SizedBox(height: 8,),
+          Row(
+            children: [
+              SizedBox(width: 10,),
+              Text("City",
+                style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
+            ],
+          ),
+          for (var i in addresses)
+            Container(
+              height: 45,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                        offset: Offset(1,1),
+                        blurRadius: 1,
+                        color: Colors.grey
+                    ),
+                  ]
+              ),
+              child: TextFormField(
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Required field';
+                  }
+                  return null;
+                },
+                initialValue: "${i.city}",
+                // controller: widget.addressController,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                  // labelText: "Street Address"
+                ),
+              ),
+            ),
+          SizedBox(height: 8,),
+          Row(
+            children: [
+              SizedBox(width: 10,),
+              Text("Country",
+                style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
+            ],
+          ),
+          for (var i in addresses)
+            Container(
+              height: 45,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                        offset: Offset(1,1),
+                        blurRadius: 1,
+                        color: Colors.grey
+                    ),
+                  ]
+              ),
+              child: TextFormField(
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Required field';
+                  }
+                  return null;
+                },
+                initialValue: "${i.country}",
+                // controller: widget.addressController,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                  // labelText: "Street Address"
+                ),
+              ),
+            ),
+          SizedBox(height: 8,),
         ],
       ),
     );
@@ -667,168 +815,284 @@ class _BillingDetailsState extends State<BillingDetails> {
   }
 }
 
-class CustomerDetails extends StatelessWidget {
-  const CustomerDetails({
+class CustomerDetails extends StatefulWidget {
+  CustomerDetails({
     super.key,
-    required this.firstnameController,
-    required this.lastnameController,
+    required this.first,
+    required this.last,
   });
+  final first;
+  final last;
 
-  final TextEditingController firstnameController;
-  final TextEditingController lastnameController;
+  @override
+  State<CustomerDetails> createState() => _CustomerDetailsState();
+}
+
+class _CustomerDetailsState extends State<CustomerDetails> {
+  String SessionId = "";
+  AddressData paymentaddresses = AddressData();
+  List<AddressDetails> addresses = [];
+   TextEditingController firstnameController = TextEditingController();
+   TextEditingController lastnameController  = TextEditingController();
+  bool loaded = false;
+
+  @override
+  void initState() {
+    getpayment();
+    super.initState();
+  }
+
+  void getpayment() async{
+    final client = RestClient(Dio());
+    print("getpayment called");
+    SessionId = await InMemory().getSession();
+    client.paymentaddress(
+      "123",
+      SessionId,
+      "application/json",
+      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',)
+        .then((value) {
+      if  (value.success == 1){
+        print("getpayment sucees");
+        paymentaddresses = value.data!;
+        addresses.addAll(paymentaddresses.addresses!);
+        print(SessionId);
+        print(JsonEncoder().convert(paymentaddresses));
+        print(JsonEncoder().convert(addresses));
+      }else{
+        print("fail");
+      }
+      setState(() {
+        loaded = true;
+      });
+    });
+  }
+
+
+  Future<void> paytm() async {
+    print("Payment called");
+    final uri = Uri.parse('https://api.opencart-api.com/api/rest/paymentaddress/');
+    SessionId = await InMemory().getSession();
+    final Map<String, String> headers = {
+      'X-Oc-Session': '$SessionId',
+      'Accept': 'application/json',
+      'X-Oc-Merchant-Id': '123',
+      'Cookie': 'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+    };
+    print(SessionId);
+    print('payment addresses $paymentaddresses');
+    print('payment addresses $addresses');
+    try {
+      final response = await get(
+        uri,
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        print(response.body);
+        print(response.headers);
+        return Future(() => true);
+      } else {
+        // Handle errors
+        print('Error: ${response.statusCode}');
+        return Future(() => false);
+      }
+    } catch (error) {
+      // Handle network or other errors
+      print('Error: $error');
+    }
+    return;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding:  EdgeInsets.all(10.0),
-      child: Container(
-        child: Column(
+    return (!loaded)
+        ? Center(child: CircularProgressIndicator())
+        : Padding(
+         padding:  EdgeInsets.all(10.0),
+         child: Container(
+           child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(height: 18,),
-            Row(
-              children: [
-                SizedBox(width: 10,),
-                Text("Full Name",
-                  style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-              ],
-            ),
-            Container(
-              height: 45,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        offset: Offset(1,1),
-                        blurRadius: 2,
-                        color: Colors.grey
-                    ),
-                  ]
-              ),
-              child: TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Required field';
-                  }
-                  return null;
-                },
-                controller: firstnameController,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                  // labelText: "First Name",
-
-                ),
-              ),
-            ),
-            SizedBox(height: 8,),
-            Row(
-              children: [
-                SizedBox(width: 10,),
-                Text("Email",
-                  style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-              ],
-            ),
-            Container(
-              height: 45,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        offset: Offset(1,1),
-                        blurRadius: 1,
-                        color: Colors.grey
-                    ),
-                  ]
-              ),
-              child: TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Required field';
-                  }
-                  return null;
-                },
-                controller: lastnameController,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                  // labelText: "Last Name"
-                ),
-              ),
-            ),
-            SizedBox(height: 8,),
-            Row(
-              children: [
-                SizedBox(width: 10,),
-                Text("Password",
-                    style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-              ],
-            ),
-            Container(
-              height: 45,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        offset: Offset(1,1),
-                        blurRadius: 1,
-                        color: Colors.grey
-                    ),
-                  ]
-              ),
-              child: TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Required field';
-                  }
-                  return null;
-                },
-                controller: lastnameController,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                  // labelText: "Last Name"
-                ),
-              ),
-            ),
-            SizedBox(height: 8,),
-            Row(
-              children: [
-                SizedBox(width: 10,),
-                Text("Phone Number",
-                  style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
-              ],
-            ),
-            Container(
-              height: 45,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        offset: Offset(1,1),
-                        blurRadius: 1,
-                        color: Colors.grey
-                    ),
-                  ]
-              ),
-              child: TextFormField(
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Required field';
-                  }
-                  return null;
-                },
-                controller: lastnameController,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                  // labelText: "Last Name"
-                ),
-              ),
-            ),
+            // Row(
+            //   children: [
+            //     SizedBox(width: 10,),
+            //     Text("Full Name",
+            //       style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+            //   ],
+            // ),
+            // Container(
+            //   height: 45,
+            //   decoration: BoxDecoration(
+            //       color: Colors.white,
+            //       boxShadow: [
+            //         BoxShadow(
+            //             offset: Offset(1,1),
+            //             blurRadius: 2,
+            //             color: Colors.grey
+            //         ),
+            //       ]
+            //   ),
+            //   child: TextFormField(
+            //     validator: (value) {
+            //       if (value!.isEmpty) {
+            //         return 'Required field';
+            //       }
+            //       return null;
+            //     },
+            //     controller: firstnameController,
+            //     decoration: InputDecoration(
+            //       border: InputBorder.none,
+            //       contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+            //     ),
+            //   ),
+            // ),
+            for (var i in addresses)
+              _buildAddressTextField("Full Name", (i.firstname + i.lastname)),
+            for (var i in addresses)
+              _buildAddressTextField("Company Name", i.company),
+              // _buildAddressTextField("Company Name", address.co),
+            // SizedBox(height: 8,),
+            // Row(
+            //   children: [
+            //     SizedBox(width: 10,),
+            //     Text("Email",
+            //       style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+            //   ],
+            // ),
+            // Container(
+            //   height: 45,
+            //   decoration: BoxDecoration(
+            //       color: Colors.white,
+            //       boxShadow: [
+            //         BoxShadow(
+            //             offset: Offset(1,1),
+            //             blurRadius: 1,
+            //             color: Colors.grey
+            //         ),
+            //       ]
+            //   ),
+            //   child: TextFormField(
+            //     validator: (value) {
+            //       if (value!.isEmpty) {
+            //         return 'Required field';
+            //       }
+            //       return null;
+            //     },
+            //     controller: lastnameController,
+            //     decoration: InputDecoration(
+            //       border: InputBorder.none,
+            //       contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+            //       // labelText: "Last Name"
+            //     ),
+            //   ),
+            // ),
+            // SizedBox(height: 8,),
+            // Row(
+            //   children: [
+            //     SizedBox(width: 10,),
+            //     Text("Password",
+            //         style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+            //   ],
+            // ),
+            // Container(
+            //   height: 45,
+            //   decoration: BoxDecoration(
+            //       color: Colors.white,
+            //       boxShadow: [
+            //         BoxShadow(
+            //             offset: Offset(1,1),
+            //             blurRadius: 1,
+            //             color: Colors.grey
+            //         ),
+            //       ]
+            //   ),
+            //   child: TextFormField(
+            //     validator: (value) {
+            //       if (value!.isEmpty) {
+            //         return 'Required field';
+            //       }
+            //       return null;
+            //     },
+            //     controller: lastnameController,
+            //     decoration: InputDecoration(
+            //       border: InputBorder.none,
+            //       contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+            //       // labelText: "Last Name"
+            //     ),
+            //   ),
+            // ),
+            // SizedBox(height: 8,),
+            // Row(
+            //   children: [
+            //     SizedBox(width: 10,),
+            //     Text("Phone Number",
+            //       style: TextStyle(fontWeight: FontWeight.w300,fontSize: 15),),
+            //   ],
+            // ),
+            // Container(
+            //   height: 45,
+            //   decoration: BoxDecoration(
+            //       color: Colors.white,
+            //       boxShadow: [
+            //         BoxShadow(
+            //             offset: Offset(1,1),
+            //             blurRadius: 1,
+            //             color: Colors.grey
+            //         ),
+            //       ]
+            //   ),
+            //   child: TextFormField(
+            //     validator: (value) {
+            //       if (value!.isEmpty) {
+            //         return 'Required field';
+            //       }
+            //       return null;
+            //     },
+            //     controller:  lastnameController,
+            //     decoration: InputDecoration(
+            //       border: InputBorder.none,
+            //       contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+            //       // labelText: "Last Name"
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
+    );
+  }
+  Widget _buildAddressTextField(String label, String initialValue) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 10,),
+            Text(label,
+              style: TextStyle(fontWeight: FontWeight.w500,fontSize: 15),),
+          ],
+        ),
+        Container(
+          height: 45,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                offset: Offset(1,1),
+                blurRadius: 1,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+          child: TextFormField(
+            initialValue: initialValue,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.only(top: 15, left: 15.0),
+            ),
+          ),
+        ),
+        SizedBox(height: 8,),
+      ],
     );
   }
 }

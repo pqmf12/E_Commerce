@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -9,16 +9,20 @@ import 'package:opencart_ecommapp1/Utils/AppConstants.dart';
 import 'package:opencart_ecommapp1/View/Auth/login.dart';
 import 'package:opencart_ecommapp1/View/Contact/contact.dart';
 import 'package:opencart_ecommapp1/View/screens/Search/search.dart';
-import 'package:opencart_ecommapp1/View/screens/account/account.dart';
 import 'package:opencart_ecommapp1/View/screens/order/order.dart';
 import 'package:provider/provider.dart';
-import '../../../Fonts/font_size.dart';
+// import '../../../Fonts/font_size.dart';
+import '../../../Models/Account/account.dart';
+import '../../../Models/Cart/DAOCart.dart';
+import '../../../Models/Cart/cart_item_provider.dart';
+import '../../../Provider/wishlist_provider.dart';
 import '../../../Theme/dark_theme.dart';
-import '../../../Theme/theme_changer_provider.dart';
+// import '../../../Theme/theme_changer_provider.dart';
 import '../../../Utils/InMemory.dart';
 import '../../../firebase_options.dart';
 import '../Cart/cart.dart';
 import '../WishList/wishlist.dart';
+import '../account/Account.dart';
 import '../category/category.dart';
 import 'homescreen.dart';
 import 'package:dio/dio.dart';
@@ -34,22 +38,34 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var ScreenTitle = ["Categories", "My Orders", "My Account"];
   int currScreen = 0;
-  TextEditingController textController = TextEditingController();
-  var emailController = TextEditingController();
-  var passwordController = TextEditingController();
-  bool _obscureText = true;
-  int logStatus = 0;
   DateTime pre_backpress = DateTime.now();
-
-  bool isloggedin = false;
-  Map userobj = {};
-
   final ScrollController _scrollController = ScrollController();
+  bool loaded = false;
+  ApiData? cartdata;
+  String SessionId = "";
+  Profile profile = Profile();
 
   @override
   void initState() {
     super.initState();
-    fetchLogged();
+    getprofile();
+  }
+
+  void getprofile() async{
+    final client = RestClient(Dio());
+    SessionId = await InMemory().getSession();
+    print(":getprofile called");
+    client.account("123", SessionId, "application/json",
+      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+     ).then((value) {
+      if(value.success == 1) {
+        print("successs");
+        profile = value.data!;
+        print(JsonEncoder().convert(profile));
+        // print("sessionID ${InMemory().getSession().toString()}");
+      }else{}
+      setState(() {});
+    });
   }
 
   void scrollHomeToTop() {
@@ -62,12 +78,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeChanger = Provider.of<ThemeChanger>(context);
+    // final themeChanger = Provider.of<ThemeChanger>(context);
+    //    final cartcount = Provider.of<ApiData>(context);
     final ThemeData theme = Theme.of(context);
     Color unselectedItemColor = theme.brightness == Brightness.light
         ? Colors.black
         : Colors.white;
-
     return WillPopScope(
       onWillPop: () async {
         // if(currScreen != 0){
@@ -100,94 +116,190 @@ class _HomePageState extends State<HomePage> {
         }
         return false;
       },
-      child: Scaffold(
-          appBar:(currScreen != 0)
-              ?AppBar(
-               title: Text(ScreenTitle[currScreen - 1]),
-               actions: [
-              IconButton(onPressed: ( ){
-                Navigator.push(context, MaterialPageRoute(builder
-                    : (context) => SearchPage()));
-              },
-                  icon: Icon(Icons.search)),
-              IconButton(onPressed: ( ){
-                Navigator.push(context, MaterialPageRoute(builder:
-                (context) =>  WishListPage()));
-              },
-                  icon: Icon(Icons.favorite_outline)),
-              IconButton(onPressed: ( ){},
-                  icon: Icon(Icons.shopping_cart_outlined)),
-            ],
-            elevation: 0,
-          )
-          :  AppBar(
-             title: Text("Home"),
-             actions: [
-             IconButton(onPressed: ( ){
+        child: Scaffold(
+            appBar:(currScreen != 0)
+                ?AppBar(
+                 title: Text(ScreenTitle[currScreen - 1]),
+                 actions: [
+                IconButton(onPressed: ( ){
                   Navigator.push(context, MaterialPageRoute(builder
                       : (context) => SearchPage()));
-             },
-             icon: Icon(Icons.search)),
-             IconButton(onPressed: ( ){
-               Navigator.push(context, MaterialPageRoute(builder:
-                   (context) =>  WishListPage()));
-             },
-             icon: Icon(Icons.favorite_outline)),
-             IconButton(onPressed: ( ){
-             Navigator.push(context, MaterialPageRoute(builder:
-                 (context) => CartPage()));
-             },
-             icon: Icon(Icons.shopping_cart_outlined)),
-             ],
-            elevation: 0,
-            ),
-          drawer:  CustomDrawer(context),
-          bottomNavigationBar: BottomNavigationBar (
-            selectedLabelStyle: TextStyle(fontWeight: FontWeight.w800,fontSize: 14,color: Colors.black),
-            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600,fontSize: 12),
-            showUnselectedLabels: true,
-            // selectedItemColor: unselectedItemColor,
-            unselectedItemColor: unselectedItemColor,
-            onTap: (index) {
-              currScreen = index;
-              setState(() {});
-              if(currScreen == 0){
-                scrollHomeToTop();
-              }
-            },
-            currentIndex: currScreen,
-            type: BottomNavigationBarType.fixed,
-            items: [
-              BottomNavigationBarItem(
-                icon:  Icon(currScreen == 0 ? FontAwesomeIcons.home :  Icons.home_outlined,
-                  size: 22,),
-                label: "Home",
+                },
+                    icon: Icon(Icons.search)),
+                Stack(
+                  children: [
+                    IconButton(onPressed: ( ){
+                      if (InMemory.isLogged == true){
+                        Navigator.push(context, MaterialPageRoute(builder:
+                            (context) =>  WishListPage()));
+                      } else {
+                        showLoginConfirmation(context);
+                      }
+                    },
+                        icon: Icon(Icons.favorite_outline)),
+                Consumer<WishlistProvider>(
+                builder: (context, wishitemProvider, child) {
+                int totalCount =  wishitemProvider.wishlistcount;
+                return (totalCount == 0) ? Text("")
+                 : Positioned(
+                      top: 0,
+                      right: 1,
+                      child: CircleAvatar(
+                        radius: 10, // Adjust the size of the avatar as needed
+                        backgroundColor: Colors.red, // Set the background color of the avatar
+                        child:Center(
+                                child:
+                                // Text('${context.watch<WishlistProvider>().totalcount(totalCount)}'),
+                                Text('$totalCount',style: TextStyle(color: Colors.white),)
+                            ),
+                      ),
+                     );
+                     },
+                    ),
+                  ],
+                ),
+                 Stack(
+                     children: [
+                       IconButton(onPressed: ( ){
+                         Navigator.push(context, MaterialPageRoute(builder:
+                             (context) => CartPage()));
+                       },
+                           icon: Icon(Icons.shopping_cart_outlined)),
+                       Positioned(
+                         top: 0,
+                         right: 1,
+                         child:CircleAvatar(
+                           radius: 10, // Adjust the size of the avatar as needed
+                           backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
+                           child: Consumer<CartItemProvider>(builder: (context, cartItemProvider, child) {
+                             int totalCount = cartItemProvider.totalProductCount;
+                             return (totalCount == 0) ? Text("")
+                              : Center(
+                                 child: Text('$totalCount',
+                                   style: TextStyle(color: Colors.white),));
+                           },
+                           ),
+                         ),
+                       ),
+                     ],
+                   ),
+              ],
+              elevation: 0,
+            )
+            :  AppBar(
+               title: Text("Home"),
+               actions: [
+               IconButton(onPressed: ( ){
+                    Navigator.push(context, MaterialPageRoute(builder
+                        : (context) => SearchPage()));
+               },
+               icon: Icon(Icons.search)),
+              Stack(
+                   children: [
+                     IconButton(onPressed: ( ){
+                       if (InMemory.isLogged == true){
+                         Navigator.push(context, MaterialPageRoute(builder:
+                             (context) =>  WishListPage()));
+                       } else {
+                         showLoginConfirmation(context);
+                       }
+                     },
+                         icon: Icon(Icons.favorite_outline)),
+                     Consumer<WishlistProvider>(
+                       builder: (context, wishitemProvider, child) {
+                         int totalCount =  wishitemProvider.wishlistcount;
+                         return (totalCount == 0) ? Text("")
+                        : Positioned(
+                           top: 0,
+                           right: 1,
+                           child: CircleAvatar(
+                             radius: 10, // Adjust the size of the avatar as needed
+                             backgroundColor: Colors.red, // Set the background color of the avatar
+                             child:Center(
+                                 child:
+                                 // Text('${context.watch<WishlistProvider>().totalcount(totalCount)}'),
+                                 Text('$totalCount',style: TextStyle(color: Colors.white),)
+                             ),
+                           ),
+                         );
+                       },
+                     ),
+                   ],
+                 ),
+             Stack(
+                   children: [
+                     IconButton(onPressed: ( ){
+                       Navigator.push(context, MaterialPageRoute(builder:
+                           (context) => CartPage()));
+                         },
+                         icon: Icon(Icons.shopping_cart_outlined)),
+                      Positioned(
+                           top: 0,
+                           right: 1,
+                           child:CircleAvatar(
+                             radius: 10, // Adjust the size of the avatar as needed
+                             backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
+                             child:  Consumer<CartItemProvider>(builder: (context, cartItemProvider, child) {
+                                int totalCount = cartItemProvider.totalProductCount;
+                             return Center(
+                             child: Text('$totalCount',
+                             style: TextStyle(color: Colors.white),));
+                               },
+                                 ),
+                              ),
+                         ),
+                   ],
+                 ),
+               ],
+              elevation: 0,
+              ),
+            drawer:  CustomDrawer(context),
+            bottomNavigationBar: BottomNavigationBar (
+              selectedLabelStyle: TextStyle(fontWeight: FontWeight.w800,fontSize: 14,color: Colors.black),
+              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600,fontSize: 12),
+              showUnselectedLabels: true,
+              // selectedItemColor: unselectedItemColor,
+              unselectedItemColor: unselectedItemColor,
+              onTap: (index) {
+                currScreen = index;
+                setState(() {});
+                if(currScreen == 0){
+                  scrollHomeToTop();
+                }
+              },
+              currentIndex: currScreen,
+              type: BottomNavigationBarType.fixed,
+              items: [
+                BottomNavigationBarItem(
+                  icon:  Icon(currScreen == 0 ? FontAwesomeIcons.home :  Icons.home_outlined,
+                    size: 22,),
+                  label: "Home",
 
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  currScreen == 1 ? Icons.category : Icons.category_outlined,
-                  size: 22,
                 ),
-                label: "Categories",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  currScreen == 2 ? FontAwesomeIcons.cube :  FontAwesomeIcons.cube,
-                  size: 22,
+                BottomNavigationBarItem(
+                  icon: Icon(
+                    currScreen == 1 ? Icons.category : Icons.category_outlined,
+                    size: 22,
+                  ),
+                  label: "Categories",
                 ),
-                label: "Order",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  currScreen == 3 ? FontAwesomeIcons.userLarge : Icons.person_3_outlined,
-                  size: 22,
+                BottomNavigationBarItem(
+                  icon: Icon(
+                    currScreen == 2 ? FontAwesomeIcons.cube :  FontAwesomeIcons.cube,
+                    size: 22,
+                  ),
+                  label: "Order",
                 ),
-                label: "Account",
-              ),
-            ],
-          ),
-          body: renderScreen()),
+                BottomNavigationBarItem(
+                  icon: Icon(
+                    currScreen == 3 ? FontAwesomeIcons.userLarge : Icons.person_3_outlined,
+                    size: 22,
+                  ),
+                  label: "Account",
+                ),
+              ],
+            ),
+            body: renderScreen()),
     );
   }
 
@@ -195,24 +307,16 @@ class _HomePageState extends State<HomePage> {
     if (currScreen == 0) return HomeScreen(Controller:  _scrollController,);
     if (currScreen == 1) return  Category();
     if (currScreen == 2) return  Order();
-    if (currScreen == 3) return  Account();
+    if (currScreen == 3) return  AccountPage(
+      callback: () {
+        getprofile();
+        setState(() {});
+      }
+    );
     return Container(
       height: 300,
       // color: Colors.grey,
     );
-  }
-
-  void fetchLogged() {
-    print("fetching logged");
-    InMemory().init().then((value) {
-      // if (isDisposed) return;
-      if (InMemory.isLogged) {
-        logStatus = 1;
-      } else {
-        logStatus = 2;
-      }
-      setState(() {});
-    });
   }
 
            String welcome = "Facebook";
@@ -252,8 +356,8 @@ class _HomePageState extends State<HomePage> {
                   child: Icon(Icons.person_3_outlined),
                 ),
                     SizedBox(height: 8,),
-                    Text("UserName",style: TextStyle(fontSize: 16),),
-
+                    Text(profile.firstname ?? " ",style: TextStyle(fontSize: 16),),
+                Text(profile.email ?? " ",style: TextStyle(fontSize: 14),),
               ],
             ),
           ),
@@ -296,38 +400,27 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           ListTile(
-            title: Text('Set FontSize',style: TextStyle(fontSize: 15),),
-            trailing:  Icon(FontAwesomeIcons.a,size: 17,),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder:
-              (context) => FontSize()));
-            },
-          ),
-          ListTile(
             title: Text('Help',style: TextStyle(fontSize: 15),),
             trailing:  Icon(FontAwesomeIcons.questionCircle,size: 17,),
             onTap: () {
             },
           ),
           // Divider(),
-          (InMemory.isLogged == false) ?  ListTile(
+          (InMemory.isLogged == true)
+              ?  ListTile(
+            title: Text('Logout',style: TextStyle(fontSize: 15),),
+            trailing: Icon(FontAwesomeIcons.arrowRightFromBracket,size: 16,
+                color:Colors.red.shade800),
+            onTap: () {
+                showLogoutConfirmation(context);
+            },
+          )
+              : ListTile(
             title: Text('Login',style: TextStyle(fontSize: 15),),
             trailing: Icon(FontAwesomeIcons.rightToBracket,size: 16,),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder
                   : (context) => LoginPage()));
-              // setState(() {
-              //   showLoginConfirmation(context);
-              // });
-             },
-            ) : ListTile(
-            title: Text('Logout',style: TextStyle(fontSize: 15),),
-            trailing: Icon(FontAwesomeIcons.arrowRightFromBracket,size: 16,
-                color:Colors.red.shade800),
-            onTap: () {
-              setState(() {
-                showLogoutConfirmation(context);
-              });
             },
           ),
           SizedBox(height: 20,),
@@ -498,9 +591,6 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-  // String session = "";
-  
   void logout(){
     print("logout Called");
     print('Session ID: ${SessionId}');
@@ -518,6 +608,90 @@ class _HomePageState extends State<HomePage> {
 
      });
     });
+  }
+  void showLoginConfirmation(BuildContext context,) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: 200,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 22,),
+                  Text("Sign up to watch "
+                      "wishlist",
+                    style: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  ),
+
+                  Padding(
+                    padding:  EdgeInsets.symmetric(horizontal: 12.0,vertical: 40),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Cancelled")));
+                                },
+                                child:  Text("cancel",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  Navigator.push(context, MaterialPageRoute(builder
+                                      : (context) => LoginPage()));
+                                  setState(() {});
+                                },
+                                child:  Text("ok",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
 }

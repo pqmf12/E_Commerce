@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
@@ -52,11 +51,12 @@ class _LoginPageState extends State<LoginPage> {
     print(emailController.text);
     print(passwordController.text);
     SessionId = await InMemory().getSession();
-    client
-        .getLogin(
+    client.getLogin(
         jsonEncode({ "email": emailController.text,
           "password": passwordController.text,}),
-        SessionId, '123')
+        SessionId, '123',
+      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+       )
         .then((value) {
       print("emailController.text" + emailController.text);
       print("passwordController.text" + passwordController.text);
@@ -65,6 +65,7 @@ class _LoginPageState extends State<LoginPage> {
         InMemory().setUser(value.data!).then((value) {});
         print("Logged In");
          Navigator.pop(context);
+         print(JsonEncoder().convert(value.data));
       }
       else {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -7,7 +7,9 @@ import 'package:opencart_ecommapp1/Models/Session/session.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Fonts/Font_changer.dart';
-import 'Fonts/font_size.dart';
+import 'Models/Cart/DAOCart.dart';
+import 'Models/Cart/cart_item_provider.dart';
+import 'Provider/wishlist_provider.dart';
 import 'Theme/theme_changer_provider.dart';
 import 'Utils/InMemory.dart';
 import 'View/Onboard_Screen.dart';
@@ -93,12 +95,12 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeChanger()),
-          ChangeNotifierProvider(create: (_) => FontChanger()),
+          ChangeNotifierProvider(create: (_) => CartItemProvider()),
+          ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ],
       child:  Builder(
         builder: (context) {
           final themeChanger = Provider.of<ThemeChanger>(context);
-          final fontChanger = Provider.of<FontChanger>(context);
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             themeMode: themeChanger.themeMode,

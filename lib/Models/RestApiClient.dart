@@ -11,7 +11,8 @@ import 'Banner/DAOBanner.dart';
 import 'Banner/DAOBannerDetail.dart';
 import 'Betseller/DAOSeller.dart';
 import 'Cart/AddCart.dart';
-import 'Cart/GetCart.dart';
+import 'Cart/DAOCart.dart';
+import 'Cart/DAODeleteCart.dart';
 import 'Category/DAOSubCategory.dart';
 import 'Category/categories.dart';
 import 'Category/list_of_categories.dart';
@@ -21,12 +22,14 @@ import 'Language/DAOLanguageDetail.dart';
 import 'Language/DAOLanguageList.dart';
 import 'Latest/DAOLatestProduct.dart';
 import 'Manufacturer/DAOManufactures.dart';
-import 'Search/search.dart';
+import 'Payment/DAOPaymentAddress.dart';
 import 'Search/search.dart';
 import 'Session/session.dart';
 import 'Specials/DAOSpecialProducts.dart';
 import 'UTC/DAOOffset.dart';
+import 'WishList/DAOAddWishlist.dart';
 import 'WishList/DAOGetWishlist.dart';
+import 'products/list_of_product.dart';
 
 part 'RestApiClient.g.dart';
 
@@ -40,6 +43,7 @@ abstract class RestClient {
       @Body() data,
       @Header("X-Oc-Session") String Session,
       @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("Cookie") String cookie,
       );
 
   @MultiPart()
@@ -82,7 +86,7 @@ abstract class RestClient {
       @Header("X-Oc-Merchant-Id") String Merchant,
       @Header("Accept") String Accept,
       @Header("X-Oc-Session") String Session,
-      @Path('id') int id,
+      @Path('id') dynamic id,
       );
 
   @MultiPart()
@@ -117,12 +121,23 @@ abstract class RestClient {
       @Header("Accept") String  Accept,
       );
 
-  @MultiPart()
+  // @MultiPart()
   @GET('account')
   Future<Account> account(
       @Header("X-Oc-Merchant-Id") String Merchant,
       @Header("X-Oc-Session") String Session,
       @Header("Accept") String  Accept,
+      @Header("Cookie") String cookie,
+      );
+  
+  @MultiPart()
+  @PUT('account')
+  Future<DioSignUp> update_profile(
+      @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("X-Oc-Session") String Session,
+      @Header("Accept") String  Accept,
+      @Header("Cookie") String cookie,
+      @Body() data,
       );
 
   @MultiPart()
@@ -141,6 +156,7 @@ abstract class RestClient {
       @Header("X-Oc-Session") String Session,
       @Header("Content-Type") String  Type,
       @Header("Accept") String  Accept,
+      @Header("Cookie") String cookie,
       @Body() data,
       );
 
@@ -154,13 +170,31 @@ abstract class RestClient {
       @Body() data,
       );
 
-     @MultiPart()
+     // @MultiPart()
      @GET('cart')
-     Future<GetCart> getcart(
+     Future<DAOCart> getcart(
      @Header("X-Oc-Merchant-Id") String Merchant,
          @Header("X-Oc-Session") String Session,
-         @Header("Accept") String  Accept,
+         @Header("Cookie") String cookie,
          );
+
+  @DELETE('cart')
+  Future<DAODeleteCart> deletecartitem(
+      @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("X-Oc-Session") String Session,
+      @Header("Cookie") String cookie,
+      @Body() data,
+      );
+
+  @MultiPart()
+  @PUT('cart')
+  Future<DAOAddWishlist> updatecartitem(
+      @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("X-Oc-Session") String Session,
+      @Header("Content-Type") String  Type,
+      @Header("Cookie") String cookie,
+      @Body() data,
+      );
 
   @MultiPart()
   @GET('bestsellers')
@@ -272,20 +306,32 @@ abstract class RestClient {
       @Path('id') String id,
       );
 
-  @MultiPart()
+  // @MultiPart()
   @POST('wishlist/{id}')
-  Future<DioSignUp> add_wishlist(
+  Future<DAOAddWishlist> add_wishlist(
       @Header("X-Oc-Merchant-Id") String Merchant,
       @Header("X-Oc-Session") String Session,
+      @Header("Accept") String  Accept,
+      @Header("Cookie") String cookie,
       @Path('id') int id,
       );
 
-  @MultiPart()
+  @DELETE('wishlist/{id}')
+  Future<DAOAddWishlist> remove_from_wishlist(
+      @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("X-Oc-Session") String Session,
+      @Header("Accept") String  Accept,
+      @Header("Cookie") String cookie,
+      @Path('id') String id,
+      );
+
+  // @MultiPart()
   @GET('wishlist')
   Future<DAOGetWishlist> getwishlist(
       @Header("X-Oc-Merchant-Id") String Merchant,
       @Header("X-Oc-Session") String Session,
       @Header("Accept") String Accept,
+      @Header("Cookie") String cookie,
       );
 
   @MultiPart()
@@ -312,12 +358,21 @@ abstract class RestClient {
       @Path('ids') String ids,
       );
 
-  @MultiPart()
+
   @GET('utc_offset')
   Future<DAOOffset> UtcOffset(
       @Header("X-Oc-Merchant-Id") String Merchant,
       @Header("X-Oc-Session") String Session,
       @Header("Accept") String Accept,
+      );
+
+  // @MultiPart()
+  @GET('paymentaddress/')
+  Future<DAOPaymentAddress> paymentaddress(
+      @Header("X-Oc-Merchant-Id") String Merchant,
+      @Header("X-Oc-Session") String Session,
+      @Header("Accept") String Accept,
+      @Header("Cookie") String cookie,
       );
 
 }

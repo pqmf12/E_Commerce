@@ -1,547 +1,489 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:opencart_ecommapp1/Models/Cart/GetCart.dart';
 import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
 import 'package:dio/dio.dart';
 import 'package:opencart_ecommapp1/Utils/InMemory.dart';
+import 'package:provider/provider.dart';
+import '../../../Models/Cart/DAOCart.dart';
+import '../../../Models/Cart/DAODeleteCart.dart';
+import '../../../Models/Cart/cart_item_provider.dart';
+import '../../../Product/product_details.dart';
+import '../../Auth/login.dart';
+import '../Payment/checkout.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({Key? key}) : super(key: key);
+   CartPage({Key? key, }) : super(key: key);
 
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
+  final ScrollController _scrollController = ScrollController();
+  TextEditingController textcontroller = TextEditingController();
+  bool isPriceDetailsVisible = false;
+  bool loaded = false;
+  // bool isLoading = false;
 
   @override
   void initState() {
     cartitems();
     super.initState();
+    _scrollController.addListener(_scrollListener);
   }
 
-  List<AddItem> cartlist = [];
-  List<ProductList> products = [];
+  // List<AddItem> cartlist = [];
+  // List<ProductList> products = [];
+
+   ApiData? cartdata ;
+  List<ProductData> productdata  = [];
+  List<Total> totalamount = [];
 
   String SessionId = "";
-  void cartitems() async{
+  void cartitems() async {
+     SessionId = await InMemory().getSession();
+    /*get(Uri.parse("https://api.opencart-api.com/api/rest/cart"),headers: {
+      'X-Oc-Session': "$SessionId",
+      'X-Oc-Merchant-Id': '123',
+      'Cookie': 'default=$SessionId;'
+    }).then((value){
+      print("cart called complete");
+      print(value.statusCode);
+      print(value.body);
+      print("value.request.headers");
+      print(value.request?.headers);
+      print(JsonEncoder().convert(value));
+    });*/
     print("cart called");
     final client = RestClient(Dio());
     SessionId = await InMemory().getSession();
     print(SessionId);
     print("cart called succefully");
     client.getcart("123",
-        SessionId,
-        "application/json")
-    .then((value) async {
-      if(value.success == 1){
-        print("success");
+        SessionId, 'default=$SessionId;')
+    .then((value)  async {
+      if(value.success == 1) {
+        print("VALUE:${value.data}");
         print(SessionId);
-        // print(productResponse.data.products[0].name);
-        // cartlist = value.data!;
-        // cartlist.addAll(value.data!);
-        cartlist.clear();
-        for (var i in value.data!) {
-          products.addAll(i.products!);
-          print(JsonEncoder().convert(i.products!));
+        if(value.data.runtimeType != List){
+          cartdata =  ApiData.fromJson(value.data);
+         // cartdata = (value.data);
+          productdata.clear();
+          totalamount.clear();
+          productdata.addAll(cartdata!.products!);
+          totalamount.addAll(cartdata!.totals!);
+          setState(() {
+          });
         }
-        // products.addAll(cartlist.first.products!);
         print(JsonEncoder().convert(value.data));
-
-        print(JsonEncoder().convert(cartlist));
+        print(JsonEncoder().convert(productdata));
+        // SharedPreferences prefs = await SharedPreferences.getInstance();
+        //  cartdata = prefs.getString(productdata.first.name) ?? " ";
       }
       else{
         print("fail");
       }
-      setState(() {});
+      setState(() {
+        loaded = true;
+        // isLoading = false;
+      });
     });
+
+  }
+
+  DeleteData? removedata;
+  void removeitems(key) async {
+    SessionId = await InMemory().getSession();
+    print("Removecart called");
+    final client = RestClient(Dio());
+    SessionId = await InMemory().getSession();
+    print(SessionId);
+    print("removeditem called succefully");
+    client.deletecartitem(
+        "123",
+        SessionId,
+        'default=$SessionId;',
+        jsonEncode( {
+         "key": key
+        }),
+      ).then((value)  {
+      if(value.success == 1) {
+        removedata = value.data;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Item Removed")));
+        print("VALUE:${value.data}");
+        print(SessionId);
+        print(JsonEncoder().convert(value.data));
+
+        setState(() {
+          productdata!.removeWhere((element) => element.key == key);
+        });
+        context.read<CartItemProvider>().decrement(key);
+      }
+      else{
+        print("fail");
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("${value.error}")));
+      }
+    });
+  }
+
+  int numOfItems = 1;
+
+  Future<void> updateitem(key, newQuantity) async {
+    final client = RestClient(Dio());
+    SessionId = await InMemory().getSession();
+    print(SessionId);
+    print("updateitem called");
+    client.updatecartitem("123", SessionId, "application/json",
+        'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+      jsonEncode( {
+        "key": key,
+        "quantity": newQuantity
+      })
+    ).then((value) => {
+      if(value.success == 1){
+        print("successfully updated"),
+        print(newQuantity),
+        cartitems(),
+      }else{
+        print("failed")
+      }
+    });
+  }
+
+  void incrementQuantity(key, currentQuantity) {
+    int parsedQuantity = int.parse(currentQuantity!);
+    parsedQuantity++;
+    setState(() {
+       currentQuantity = parsedQuantity.toString();
+    });
+    print(parsedQuantity);
+    updateitem(key, parsedQuantity);
+  }
+
+  void decrementQuantity(key, currentQuantity) {
+    int parsedQuantity = int.parse(currentQuantity!);
+    parsedQuantity--;
+    setState(() {
+      currentQuantity = parsedQuantity.toString();
+    });
+    print(parsedQuantity);
+    updateitem(key, parsedQuantity);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    // Check if the user has scrolled to the end of the ListView
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      setState(() {
+        // Show the "PRICE DETAILS" column when scrolled to the end
+        isPriceDetailsVisible = true;
+      });
+    } else {
+      setState(() {
+        // Hide the "PRICE DETAILS" column when not scrolled to the end
+        isPriceDetailsVisible = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final cartItem = Provider.of<CartItemProvider>(context);
+    return  Scaffold(
       appBar: AppBar(
-        title: Text("Cart"),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height - 150 ,),
-          // Expanded(
-          //   child: SingleChildScrollView(
-          //     child: Column(
-          //       children: [
-          //         Container(
-          //           decoration: BoxDecoration(
-          //             gradient: LinearGradient(
-          //               colors:  [
-          //                 Colors.pink.shade50,
-          //                 Colors.white,
-          //                 Colors.pink.shade50,
-          //               ],
-          //             ),
-          //           ),
-          //           height: MediaQuery.of(context).size.height,
-          //           width: double.infinity,
-          //           child: ListView.builder(
-          //           scrollDirection: Axis.vertical,
-          //           itemCount: 12,
-          //           itemBuilder: (BuildContext context,int index) {
-          //             // var i = products[index];
-          //             return SingleChildScrollView(
-          //               child: Row(
-          //                 children: [
-          //                   Column(
-          //                     children: [
-          //                       Container(
-          //                         height: 220,
-          //                         width: 160,
-          //                         decoration: BoxDecoration(
-          //                           border: Border.all(color: Colors.lime.shade900),
-          //                         ),
-          //                         margin: EdgeInsets.all(12),
-          //                         child:  Padding(
-          //                           padding: const EdgeInsets.all(6.0),
-          //                           child: Image.asset(
-          //                             "assets/images/background.jpg", // Replace with the image path
-          //                             fit: BoxFit.cover,
-          //                           ),
-          //                         ),
-          //                       ),
-          //                     ],
-          //                   ),
-          //                   Padding(
-          //                     padding: EdgeInsets.symmetric( vertical: 16),
-          //                     child: Column(
-          //                       mainAxisAlignment: MainAxisAlignment.start,
-          //                       children: [
-          //                         Text("GANESHA MURTI",
-          //                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
-          //                         SizedBox(height: 20,),
-          //                         Text("Product Code: VH 120", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //                         SizedBox(height: 8,),
-          //                         Text("Price : ₹ 3,999", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //                         SizedBox(height: 58,),
-          //                         Row(
-          //                           children: [
-          //                             Container(
-          //                               height: 40,
-          //                               width: 70,
-          //                               decoration: BoxDecoration(
-          //                                   borderRadius: BorderRadius.circular(6.0),
-          //                                   color: Colors.red.shade50,
-          //                                   border: Border.all(color: Colors.lime.shade900)
-          //                               ),
-          //                               child: Row(
-          //                                 mainAxisAlignment: MainAxisAlignment.center,
-          //                                 children: [
-          //                                   Text("Qty:  1"),
-          //                                   Icon(Icons.arrow_drop_down_outlined),
-          //                                 ],
-          //                               ),
-          //                             ),
-          //                             SizedBox(width: 8,),
-          //                             ElevatedButton(
-          //                               style: ElevatedButton.styleFrom(
-          //                                   shape: RoundedRectangleBorder(borderRadius:
-          //                                   BorderRadius.circular(6.0),),
-          //                                   side: BorderSide(color: Colors.lime.shade900)
-          //                               ),
-          //                               onPressed: () {},
-          //                               child:  Text("Remove"),
-          //                             ),
-          //                           ],
-          //                         ),
-          //
-          //                       ],
-          //                     ),
-          //                   ),
-          //
-          //                 ],
-          //               ),
-          //             );
-          //           }
-          //           ),
-          //         ),
-          //         // Container(
-          //         //   decoration: BoxDecoration(
-          //         //     gradient: LinearGradient(
-          //         //       colors:  [
-          //         //         Colors.pink.shade50,
-          //         //         Colors.white,
-          //         //         Colors.pink.shade50,
-          //         //       ],
-          //         //     ),
-          //         //   ),
-          //         //   height: 280,
-          //         //   width: double.infinity,
-          //         //   child: Row(
-          //         //     children: [
-          //         //       Column(
-          //         //         children: [
-          //         //           Container(
-          //         //             height: 220,
-          //         //             width: 160,
-          //         //             decoration: BoxDecoration(
-          //         //               border: Border.all(color: Colors.lime.shade900),
-          //         //             ),
-          //         //             margin: EdgeInsets.all(12),
-          //         //             child:  Padding(
-          //         //               padding: const EdgeInsets.all(6.0),
-          //         //               child: Image.asset(
-          //         //                 "assets/images/delivery.png", // Replace with the image path
-          //         //                 fit: BoxFit.cover,
-          //         //               ),
-          //         //             ),
-          //         //           ),
-          //         //         ],
-          //         //       ),
-          //         //       Padding(
-          //         //         padding: EdgeInsets.symmetric( vertical: 16),
-          //         //         child: Column(
-          //         //           mainAxisAlignment: MainAxisAlignment.start,
-          //         //           children: [
-          //         //             Text("Ceramic Doll",
-          //         //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
-          //         //             SizedBox(height: 20,),
-          //         //             Text("Product Code: VH 220", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //         //             SizedBox(height: 8,),
-          //         //             Text("Price :₹ 1,999", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //         //             SizedBox(height: 58,),
-          //         //             Row(
-          //         //               children: [
-          //         //                 Container(
-          //         //                   height: 40,
-          //         //                   width: 70,
-          //         //                   decoration: BoxDecoration(
-          //         //                       borderRadius: BorderRadius.circular(6.0),
-          //         //                       color: Colors.red.shade50,
-          //         //                       border: Border.all(color: Colors.lime.shade900)
-          //         //                   ),
-          //         //                   child: Row(
-          //         //                     mainAxisAlignment: MainAxisAlignment.center,
-          //         //                     children: [
-          //         //                       Text("Qty:  1"),
-          //         //                       Icon(Icons.arrow_drop_down_outlined),
-          //         //                     ],
-          //         //                   ),
-          //         //                 ),
-          //         //                 SizedBox(width: 8,),
-          //         //                 ElevatedButton(
-          //         //                   style: ElevatedButton.styleFrom(
-          //         //                       shape: RoundedRectangleBorder(borderRadius:
-          //         //                       BorderRadius.circular(6.0),),
-          //         //                       side: BorderSide(color: Colors.lime.shade900)
-          //         //                   ),
-          //         //                   onPressed: () {},
-          //         //                   child:  Text("Remove"),
-          //         //                 ),
-          //         //               ],
-          //         //             ),
-          //         //
-          //         //           ],
-          //         //         ),
-          //         //       ),
-          //         //     ],
-          //         //   ),
-          //         // ),
-          //         // Container(
-          //         //   decoration: BoxDecoration(
-          //         //     gradient: LinearGradient(
-          //         //       colors:  [
-          //         //         Colors.pink.shade50,
-          //         //         Colors.white,
-          //         //         Colors.pink.shade50,
-          //         //       ],
-          //         //     ),
-          //         //   ),
-          //         //   height: 280,
-          //         //   width: double.infinity,
-          //         //   child: Row(
-          //         //     children: [
-          //         //       Column(
-          //         //         children: [
-          //         //           Container(
-          //         //             height: 220,
-          //         //             width: 160,
-          //         //             decoration: BoxDecoration(
-          //         //               border: Border.all(color: Colors.lime.shade900),
-          //         //             ),
-          //         //             margin: EdgeInsets.all(12),
-          //         //             child:  Padding(
-          //         //               padding: const EdgeInsets.all(6.0),
-          //         //               child: Image.asset(
-          //         //                 "assets/images/edit.png", // Replace with the image path
-          //         //                 fit: BoxFit.cover,
-          //         //               ),
-          //         //             ),
-          //         //           ),
-          //         //         ],
-          //         //       ),
-          //         //       Padding(
-          //         //         padding: EdgeInsets.symmetric( vertical: 16),
-          //         //         child: Column(
-          //         //           mainAxisAlignment: MainAxisAlignment.start,
-          //         //           children: [
-          //         //             Text("Horse Wall Frame",
-          //         //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
-          //         //             SizedBox(height: 20,),
-          //         //             Text("Product Code: VH 132", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //         //             SizedBox(height: 8,),
-          //         //             Text("Price : ₹ 3,899", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),),
-          //         //             SizedBox(height: 58,),
-          //         //             Row(
-          //         //               children: [
-          //         //                 Container(
-          //         //                   height: 40,
-          //         //                   width: 70,
-          //         //                   decoration: BoxDecoration(
-          //         //                       borderRadius: BorderRadius.circular(6.0),
-          //         //                       color: Colors.red.shade50,
-          //         //                       border: Border.all(color: Colors.lime.shade900)
-          //         //                   ),
-          //         //                   child: Row(
-          //         //                     mainAxisAlignment: MainAxisAlignment.center,
-          //         //                     children: [
-          //         //                       Text("Qty:  1"),
-          //         //                       Icon(Icons.arrow_drop_down_outlined)
-          //         //                     ],
-          //         //                   ),
-          //         //                 ),
-          //         //                 SizedBox(width: 8,),
-          //         //                 ElevatedButton(
-          //         //                   style: ElevatedButton.styleFrom(
-          //         //                       shape: RoundedRectangleBorder(borderRadius:
-          //         //                       BorderRadius.circular(6.0),),
-          //         //                       side: BorderSide(color: Colors.lime.shade900)
-          //         //                   ),
-          //         //                   onPressed: () {},
-          //         //                   child:  Text("Remove"),
-          //         //                 ),
-          //         //               ],
-          //         //             ),
-          //         //
-          //         //           ],
-          //         //         ),
-          //         //       ),
-          //         //     ],
-          //         //   ),
-          //         // ),
-          //         // Divider(),
-          //         // SizedBox(height: 6,),
-          //         // Row(
-          //         //   children: [
-          //         //     Text("  COUPONS"),
-          //         //   ],
-          //         // ),
-          //         // Row(
-          //         //   children: [
-          //         //     Text("  Best Coupon For You",style: TextStyle(fontWeight: FontWeight.w600,
-          //         //         fontSize: 16,color: Colors.black),),
-          //         //     SizedBox(width: 70,),
-          //         //     Text("All Coupons",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //         fontSize: 16,color: Colors.red.shade800),),
-          //         //     IconButton(onPressed: () {},
-          //         //         icon: Icon(Icons.arrow_forward_ios_outlined,size: 12,color: Colors.red.shade800,)),
-          //         //   ],
-          //         // ),
-          //         // Container(
-          //         //   height: 150,
-          //         //   decoration: BoxDecoration(
-          //         //     border: Border.all(color: Colors.lime.shade800),
-          //         //     borderRadius: BorderRadius.circular(8.0),
-          //         //   ),
-          //         //   margin: EdgeInsets.all(10.0),
-          //         //   child: Column(
-          //         //     children: [
-          //         //       SizedBox(height: 12,),
-          //         //       Row(
-          //         //         children: [
-          //         //           SizedBox(width: 10,),
-          //         //           Text("Extra ₹ 201 Off",
-          //         //             style: TextStyle(fontWeight: FontWeight.w600,
-          //         //                 fontSize: 14,color: Colors.black),),
-          //         //         ],
-          //         //       ),
-          //         //       SizedBox(height: 8,),
-          //         //       Row(
-          //         //         children: [
-          //         //           SizedBox(width: 10,),
-          //         //           Text("₹ 200 off on minimum purchase of ₹ 799",
-          //         //             style: TextStyle(fontWeight: FontWeight.w300,
-          //         //                 fontSize: 13,color: Colors.black),)
-          //         //         ],
-          //         //       ),
-          //         //       SizedBox(height: 16,),
-          //         //       Row(
-          //         //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //         //         children: [
-          //         //           Container(
-          //         //             height: 40,width: 80,
-          //         //             // color: Colors.cyan,
-          //         //             decoration: BoxDecoration(
-          //         //                 border: Border.all(color: Colors.lime.shade600)
-          //         //             ),
-          //         //             child: Center(child: Text("KASHA200")),
-          //         //           ),
-          //         //           ElevatedButton(
-          //         //               style: ElevatedButton.styleFrom( //<-- SEE HERE
-          //         //                 side: BorderSide(
-          //         //                   color: Colors.red.shade800,
-          //         //                 ),
-          //         //                 shape: RoundedRectangleBorder(
-          //         //                     borderRadius: BorderRadius.circular(8.0)),
-          //         //               ),
-          //         //               onPressed: ( ){},
-          //         //               child: Text("LOGIN"))
-          //         //         ],
-          //         //       ),
-          //         //     ],
-          //         //   ),
-          //         // ),
-          //         // SizedBox(height: 26,),
-          //         // Row(
-          //         //   children: [
-          //         //     Text("  PRICE DETAILS (3 Items)",style: TextStyle(fontWeight: FontWeight.w600,
-          //         //         fontSize: 14, color: Colors.black),),
-          //         //   ],
-          //         // ),
-          //         // SizedBox(height: 16,),
-          //         // Row(
-          //         //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         //   children: [
-          //         //     Text("  Total MRP",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //     Text("₹ 6899  ",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //   ],
-          //         // ),
-          //         // Row(
-          //         //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         //   children: [
-          //         //     Text("  Discount on MRP",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //     Text("₹ 800  ",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //   ],
-          //         // ),
-          //         // Row(
-          //         //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         //   children: [
-          //         //     Text("  Convenience Fee",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //     Text("₹ 99  ",style: TextStyle(fontWeight: FontWeight.w300,
-          //         //       fontSize: 16, ),),
-          //         //   ],
-          //         // ),
-          //         // SizedBox(height: 16,),
-          //         // Divider(),
-          //         // Row(
-          //         //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         //   children: [
-          //         //     Text("  Total Amount",style: TextStyle(fontWeight: FontWeight.w600,
-          //         //       fontSize: 16, ),),
-          //         //     Text("₹ 6000  ",style: TextStyle(fontWeight: FontWeight.w600,
-          //         //       fontSize: 16, ),),
-          //         //   ],
-          //         // ),
-          //         // SizedBox(height: 16,),
-          //         // Container(
-          //         //   height: 120,
-          //         //   color: Colors.grey.shade100,
-          //         //   child: SingleChildScrollView(
-          //         //     child: Padding(
-          //         //       padding:  EdgeInsets.all(14.0),
-          //         //       child: Row(
-          //         //         // mainAxisAlignment: MainAxisAlignment.center,
-          //         //         children: [
-          //         //           Column(
-          //         //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         //             children: [
-          //         //               Image.asset("assets/icons/original.jpg",height: 40,width: 40,),
-          //         //               SizedBox(height: 10,),
-          //         //               Text("Genuine Products",style: TextStyle(color: Colors.black45,
-          //         //                 fontSize: 12,),),
-          //         //             ],
-          //         //           ),
-          //         //           Padding(
-          //         //             padding: const EdgeInsets.all(8.0),
-          //         //             child: Column(
-          //         //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //         //               children: [
-          //         //                 Image.asset("assets/images/delivery.png",height: 40,width: 40,),
-          //         //                 SizedBox(height: 10,),
-          //         //                 Text("Contactless Delivery",style: TextStyle(color: Colors.black45,
-          //         //                   fontSize: 12,),),
-          //         //               ],
-          //         //             ),
-          //         //           ),
-          //         //           Column(
-          //         //             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //         //             children: [
-          //         //               Image.asset("assets/images/paypal.png",height: 40,width: 40,),
-          //         //               SizedBox(height: 10,),
-          //         //               Text("Secure Payments",style: TextStyle(color: Colors.black45,
-          //         //                 fontSize: 12,),),
-          //         //             ],
-          //         //           ),
-          //         //         ],
-          //         //       ),
-          //         //     ),
-          //         //   ),
-          //         // ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            title: Text("Cart"),
+            elevation: 0,
+          ),
+      body:  (!loaded) ? Center(
+       child: CircularProgressIndicator(),
+        )
+          : (loaded && productdata.isEmpty)
+          ? Column(
+           // mainAxisAlignment: MainAxisAlignment.center,
+           children: [
+          Center(child: Image.asset("assets/eComm/empty_cart.png")),
+          SizedBox(height: 16,),
+          Text("Your cart is empty!",
+            style: TextStyle(color: Colors.teal[900],
+                fontSize: 20,fontWeight: FontWeight.w500),),
+          SizedBox(height: 16,),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Continue shopping",
+              style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
+          ),
+        ],
+      )
+         : Stack(
             children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    // Navigator.push(context, MaterialPageRoute(builder:
-                    //     (contex) => CheckOutPage() ));
-                  },
-                  child: Container(
-                    height: 50,
+              ListView.builder(
+                controller: _scrollController,
+              scrollDirection: Axis.vertical,
+              itemCount: 1,
+              itemBuilder: (BuildContext context,int index) {
+                  return Column(
+                    children: [
+                  for (var i in productdata!)
+                  Container(
                     decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-                        shape: BoxShape.rectangle,
-                        border: Border.all(color: Colors.lime.shade900,)
+                      border: Border.all(color: Colors.lime.shade800),
                     ),
-                    width: double.infinity,
-                    child: Center(child: Text('Checkout',
-                        style: TextStyle(fontSize: 18,color: Colors.black))),
+                    margin: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: (){
+                            Navigator.push(context, MaterialPageRoute(builder:
+                                (context) =>
+                                ProductDetailScreen(id: i.product_id)
+                            ));
+                          },
+                          child: Text(i.name.toString(),
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
+                        ),
+                        SizedBox(height: 20,),
+                        InkWell(
+                            onTap: (){
+                              Navigator.push(context, MaterialPageRoute(builder:
+                                  (context) =>
+                                  ProductDetailScreen(id: i.product_id)
+                              ));
+                            },
+                            child: Text("Model: ${i.model}", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),)),
+                        SizedBox(height: 8,),
+                        InkWell(
+                            onTap: (){
+                              Navigator.push(context, MaterialPageRoute(builder:
+                                  (context) =>
+                                  ProductDetailScreen(id: i.product_id)
+                              ));
+                            },
+                            child: Text("Price: ${i.price}", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),)),
+                        SizedBox(height: 15,),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: 45,
+                              width: 120,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  // color: Colors.red.shade50,
+                                  border: Border.all(color: Colors.lime.shade900)
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  Text("Qty:  ${i.quantity}"),
+                                  // SizedBox(
+                                  //   height:20,
+                                  //   width: 35,
+                                  //   child: TextFormField(
+                                  //     controller: textcontroller,
+                                  //   ),
+                                  // ),
+                                  // SizedBox(width: 12,),
+                                  SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                       InkWell(
+                                           onTap: (){
+                                             // updateitem(i.quantity);
+                                             incrementQuantity(i.key, i.quantity);
+                                           },
+                                           child: Icon(Icons.arrow_drop_up_outlined)),
+                                        InkWell(
+                                            onTap: (){
+                                              // updateitem(i.quantity);
+                                              decrementQuantity(i.key, i.quantity);
+                                            },
+                                            child: Icon(Icons.arrow_drop_down_outlined)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8,),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius:
+                                  BorderRadius.circular(6.0),),
+                                  side: BorderSide(color: Colors.lime.shade900)
+                              ),
+                              onPressed: () {
+                                removeitems(i.key);
+                                // value.removeItem(index);
+                              },
+                              child:  Text("Remove"),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10,),
+                      ],
+                    ),
+                  ),
+                  for(var x in totalamount)
+                   ListTile(
+                   title: Text(x.title!,style: TextStyle(fontWeight: FontWeight.w400,
+                   fontSize: 14,),),
+                   trailing: Text(x.text!,style: TextStyle(fontWeight: FontWeight.w400,
+                   fontSize: 16, ),),),
+              ],
+            );
+             }
+             ),
+             Positioned(
+              bottom: 0,
+              // top: 0,
+              right: 0,
+              left: 0,
+              child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                    if (InMemory.isLogged == true){
+                      Navigator.push(context, MaterialPageRoute(builder:
+                          (contex) => CheckOutPage() ));
+                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You can proceed now")));
+                    } else {
+                    showLoginConfirmation(context);
+                    }
+                    setState(() {});
+                    },
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                          color: Colors.pink.shade50,
+                          shape: BoxShape.rectangle,
+                          border: Border.all(color: Colors.lime.shade900,)
+                      ),
+                      width: double.infinity,
+                      child: Center(child: Text('Checkout',
+                          style: TextStyle(fontSize: 18,color: Colors.black))),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    // Navigator.push(context, MaterialPageRoute(builder:
-                    //     (context) =>  HomePage()
-                    // ));
-                  },
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        shape: BoxShape.rectangle,
-                        border: Border.all(color: Colors.lime.shade900,)
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                   Navigator.pop(context);
+                    },
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          shape: BoxShape.rectangle,
+                          border: Border.all(color: Colors.lime.shade900,)
+                      ),
+                      width: double.infinity,
+                      child: Center(child: Text('Continue Shopping',
+                        style: TextStyle(fontSize: 18,color: Colors.black),textAlign: TextAlign.center,)),
                     ),
-                    width: double.infinity,
-                    child: Center(child: Text('Continue Shopping',
-                      style: TextStyle(fontSize: 18,color: Colors.black),textAlign: TextAlign.center,)),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  void showLoginConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: 200,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 22,),
+                  Text("Sign up for checking out",
+                    style: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  Padding(
+                    padding:   EdgeInsets.symmetric(horizontal: 12.0,vertical: 40),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Cancelled")));
+                                },
+                                child:  Text("cancel",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  Navigator.push(context, MaterialPageRoute(builder
+                                      : (context) => LoginPage()));
+                                  setState(() {});
+                                },
+                                child:  Text("ok",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

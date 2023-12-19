@@ -13,7 +13,7 @@ class Favouritepage extends StatefulWidget {
 
 class _FavouritepageState extends State<Favouritepage> {
 
-  List<int> selectedItem = [];
+  // List<int> selectedItem = [];
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,6 @@ class _FavouritepageState extends State<Favouritepage> {
         //           ),
         //           child: Center(child: Icon(Icons.favorite))))
         // ],
-
         actions: [
           Stack(
             children: [

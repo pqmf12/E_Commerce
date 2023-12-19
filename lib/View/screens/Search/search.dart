@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
 import 'package:dio/dio.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../Models/Search/search.dart';
 import '../../../Product/product_details.dart';
@@ -14,10 +15,12 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   TextEditingController textcontroller = TextEditingController();
+  SpeechToText speechToText = SpeechToText();
+  var text = " ";
   bool loaded = false;
   bool isloading = false;
   List<Searchproducts>  resultdata = [];
-
+  var isListening = false;
 
   void fetchproduct() {
     final client = RestClient(Dio());
@@ -41,7 +44,7 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: Container(
-          height: 40,
+          height: 45,
           child: TextField(
             controller: textcontroller,
             onSubmitted: (val) {
@@ -50,21 +53,64 @@ class _SearchPageState extends State<SearchPage> {
               setState(() {});
               resultdata.clear();
               fetchproduct();
-
             },
             decoration: InputDecoration(
                 contentPadding:
                 EdgeInsets.symmetric(vertical: -4),
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
-                suffixIcon: IconButton(onPressed: (){
-                  textcontroller.clear();
-                  resultdata.clear();
-                  setState(() {});
-                },
-                  icon: Icon(Icons.mic),),
+                suffixIcon:  Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTapDown: (details) async{
+                          if(!isListening){
+                            var available = await speechToText.initialize();
+                            print("started");
+                            if(available){
+                              setState(() {
+                                isListening = true;
+                                speechToText.listen(
+                                  onResult: (result){
+                                    setState(() {
+                                       text = result.recognizedWords;
+                                       textcontroller.text = text;
+                                      print("Text: $text");
+                                    });
+                                  },
+                                );
+                              });
+                            }
+                          }
+                      },
+                      onTapUp: (details){
+                       // if (isListening) {
+                        setState(() {
+                          isListening = false;
+                        });
+                        speechToText.stop();
+                        print("Stop");
+                      // }
+                       },
+                      child: CircleAvatar(
+                        radius: 18,
+                        child: Icon(isListening ? Icons.mic : Icons.mic_none,),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.clear),
+                      onPressed: () {
+                        textcontroller.clear();
+                        resultdata.clear();
+                        setState(() {});
+                      },
+                    ),
+                  ],
+                ),
                 hintStyle: TextStyle(fontSize: 14),
-                hintText: "Search Here"),
+                hintText: "Search here",
+            ),
           ),
         ),
       ),

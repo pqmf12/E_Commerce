@@ -81,10 +81,11 @@ class products {
   dynamic shipping;
   dynamic reward;
   dynamic points;
- dynamic category;
+  dynamic category;
   dynamic quantity;
   dynamic reviews;
   dynamic recurrings;
+  bool iswishlisted;
 
   products({
     this.id,
@@ -149,6 +150,7 @@ class products {
    this.quantity,
     this.reviews,
     this.recurrings,
+    this.iswishlisted = false,
   });
 
   factory products.fromJson(Map<String, dynamic> json) =>

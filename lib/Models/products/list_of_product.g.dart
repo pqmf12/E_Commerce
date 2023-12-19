@@ -83,6 +83,7 @@ products _$productsFromJson(Map<String, dynamic> json) => products(
       quantity: json['quantity'],
       reviews: json['reviews'],
       recurrings: json['recurrings'],
+      iswishlisted: json['iswishlisted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$productsToJson(products instance) => <String, dynamic>{
@@ -148,4 +149,5 @@ Map<String, dynamic> _$productsToJson(products instance) => <String, dynamic>{
       'quantity': instance.quantity,
       'reviews': instance.reviews,
       'recurrings': instance.recurrings,
+      'iswishlisted': instance.iswishlisted,
     };

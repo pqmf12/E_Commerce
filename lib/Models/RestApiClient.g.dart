@@ -25,12 +25,14 @@ class _RestClient implements RestClient {
     dynamic data,
     String Session,
     String Merchant,
+    String cookie,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{
       r'X-Oc-Session': Session,
       r'X-Oc-Merchant-Id': Merchant,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = data;
@@ -208,7 +210,7 @@ class _RestClient implements RestClient {
     String Merchant,
     String Accept,
     String Session,
-    int id,
+    dynamic id,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -393,6 +395,7 @@ class _RestClient implements RestClient {
     String Merchant,
     String Session,
     String Accept,
+    String cookie,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -400,12 +403,52 @@ class _RestClient implements RestClient {
       r'X-Oc-Merchant-Id': Merchant,
       r'X-Oc-Session': Session,
       r'Accept': Accept,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final Map<String, dynamic>? _data = null;
     final _result =
         await _dio.fetch<Map<String, dynamic>>(_setStreamType<Account>(Options(
       method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              'account',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = Account.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<DioSignUp> update_profile(
+    String Merchant,
+    String Session,
+    String Accept,
+    String cookie,
+    dynamic data,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant,
+      r'X-Oc-Session': Session,
+      r'Accept': Accept,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final _data = data;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DioSignUp>(Options(
+      method: 'PUT',
       headers: _headers,
       extra: _extra,
       contentType: 'multipart/form-data',
@@ -421,7 +464,7 @@ class _RestClient implements RestClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final value = Account.fromJson(_result.data!);
+    final value = DioSignUp.fromJson(_result.data!);
     return value;
   }
 
@@ -470,6 +513,7 @@ class _RestClient implements RestClient {
     String Session,
     String Type,
     String Accept,
+    String cookie,
     dynamic data,
   ) async {
     const _extra = <String, dynamic>{};
@@ -479,6 +523,7 @@ class _RestClient implements RestClient {
       r'X-Oc-Session': Session,
       r'Content-Type': Type,
       r'Accept': Accept,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = data;
@@ -545,23 +590,99 @@ class _RestClient implements RestClient {
   }
 
   @override
-  Future<GetCart> getcart(
+  Future<DAOCart> getcart(
     String Merchant,
     String Session,
-    String Accept,
+    String cookie,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{
       r'X-Oc-Merchant-Id': Merchant,
       r'X-Oc-Session': Session,
-      r'Accept': Accept,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final Map<String, dynamic>? _data = null;
     final _result =
-        await _dio.fetch<Map<String, dynamic>>(_setStreamType<GetCart>(Options(
+        await _dio.fetch<Map<String, dynamic>>(_setStreamType<DAOCart>(Options(
       method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              'cart',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = DAOCart.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<DAODeleteCart> deletecartitem(
+    String Merchant,
+    String Session,
+    String cookie,
+    dynamic data,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant,
+      r'X-Oc-Session': Session,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final _data = data;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DAODeleteCart>(Options(
+      method: 'DELETE',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              'cart',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = DAODeleteCart.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<DAOAddWishlist> updatecartitem(
+    String Merchant,
+    String Session,
+    String Type,
+    String cookie,
+    dynamic data,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant,
+      r'X-Oc-Session': Session,
+      r'Content-Type': Type,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final _data = data;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DAOAddWishlist>(Options(
+      method: 'PUT',
       headers: _headers,
       extra: _extra,
       contentType: 'multipart/form-data',
@@ -577,7 +698,7 @@ class _RestClient implements RestClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final value = GetCart.fromJson(_result.data!);
+    final value = DAOAddWishlist.fromJson(_result.data!);
     return value;
   }
 
@@ -1068,9 +1189,11 @@ class _RestClient implements RestClient {
   }
 
   @override
-  Future<DioSignUp> add_wishlist(
+  Future<DAOAddWishlist> add_wishlist(
     String Merchant,
     String Session,
+    String Accept,
+    String cookie,
     int id,
   ) async {
     const _extra = <String, dynamic>{};
@@ -1078,15 +1201,16 @@ class _RestClient implements RestClient {
     final _headers = <String, dynamic>{
       r'X-Oc-Merchant-Id': Merchant,
       r'X-Oc-Session': Session,
+      r'Accept': Accept,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final Map<String, dynamic>? _data = null;
     final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<DioSignUp>(Options(
+        .fetch<Map<String, dynamic>>(_setStreamType<DAOAddWishlist>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
-      contentType: 'multipart/form-data',
     )
             .compose(
               _dio.options,
@@ -1099,7 +1223,46 @@ class _RestClient implements RestClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final value = DioSignUp.fromJson(_result.data!);
+    final value = DAOAddWishlist.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<DAOAddWishlist> remove_from_wishlist(
+    String Merchant,
+    String Session,
+    String Accept,
+    String cookie,
+    String id,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant,
+      r'X-Oc-Session': Session,
+      r'Accept': Accept,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final Map<String, dynamic>? _data = null;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DAOAddWishlist>(Options(
+      method: 'DELETE',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              'wishlist/${id}',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = DAOAddWishlist.fromJson(_result.data!);
     return value;
   }
 
@@ -1108,6 +1271,7 @@ class _RestClient implements RestClient {
     String Merchant,
     String Session,
     String Accept,
+    String cookie,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -1115,6 +1279,7 @@ class _RestClient implements RestClient {
       r'X-Oc-Merchant-Id': Merchant,
       r'X-Oc-Session': Session,
       r'Accept': Accept,
+      r'Cookie': cookie,
     };
     _headers.removeWhere((k, v) => v == null);
     final Map<String, dynamic>? _data = null;
@@ -1123,7 +1288,6 @@ class _RestClient implements RestClient {
       method: 'GET',
       headers: _headers,
       extra: _extra,
-      contentType: 'multipart/form-data',
     )
             .compose(
               _dio.options,
@@ -1269,7 +1433,6 @@ class _RestClient implements RestClient {
       method: 'GET',
       headers: _headers,
       extra: _extra,
-      contentType: 'multipart/form-data',
     )
             .compose(
               _dio.options,
@@ -1283,6 +1446,44 @@ class _RestClient implements RestClient {
               baseUrl,
             ))));
     final value = DAOOffset.fromJson(_result.data!);
+    return value;
+  }
+
+  @override
+  Future<DAOPaymentAddress> paymentaddress(
+    String Merchant,
+    String Session,
+    String Accept,
+    String cookie,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant,
+      r'X-Oc-Session': Session,
+      r'Accept': Accept,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final Map<String, dynamic>? _data = null;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DAOPaymentAddress>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              'paymentaddress/',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = DAOPaymentAddress.fromJson(_result.data!);
     return value;
   }
 

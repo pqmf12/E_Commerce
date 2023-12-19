@@ -31,7 +31,9 @@ UserInfo _$UserInfoFromJson(Map<String, dynamic> json) => UserInfo(
       telephone: json['telephone'],
       fax: json['fax'],
       cart: json['cart'],
-      wishlist: json['wishlist'],
+      wishlist: (json['wishlist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       newsletter: json['newsletter'],
       address_id: json['address_id'],
       custom_field: json['custom_field'],
@@ -41,7 +43,9 @@ UserInfo _$UserInfoFromJson(Map<String, dynamic> json) => UserInfo(
       safe: json['safe'],
       code: json['code'],
       date_added: json['date_added'],
-      custom_fields: json['custom_fields'],
+      custom_fields: (json['custom_fields'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       account_custom_field: json['account_custom_field'],
       wishlist_total: json['wishlist_total'],
       cart_count_products: json['cart_count_products'],

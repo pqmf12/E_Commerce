@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
+import 'package:provider/provider.dart';
 
 import '../../../Models/Cart/AddCart.dart';
 import '../../../Models/products/list_of_product.dart';
 import '../../../Product/product_details.dart';
+import '../../../Provider/wishlist_provider.dart';
 import '../../../Utils/InMemory.dart';
+import '../../Auth/login.dart';
 
 class ManufacturerProducts extends StatefulWidget {
   const ManufacturerProducts({Key? key, required this.id, required this.title}) : super(key: key);
@@ -52,6 +55,7 @@ class _ManufacturerProductsState extends State<ManufacturerProducts> {
         SessionId!,
         "application/json",
         "*/*",
+        'default=$SessionId;',
         jsonEncode( {
           "product_id": id,
           "quantity": 1})
@@ -128,7 +132,14 @@ class _ManufacturerProductsState extends State<ManufacturerProducts> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    IconButton(onPressed: ( ){},
+                                    IconButton(onPressed: ( ){
+                                      if (InMemory.isLogged == true){
+                                        context.read<WishlistProvider>().increment(i.product_id);
+                                      } else {
+                                        showLoginConfirmation(context,i.product_id);
+                                      }
+                                      setState(() {});
+                                    },
                                         icon: Icon(Icons.favorite_outline,
                                           color: Colors.black54,)),
                                   ],
@@ -198,6 +209,88 @@ class _ManufacturerProductsState extends State<ManufacturerProducts> {
           ),
         ],
       ),
+    );
+  }
+  void showLoginConfirmation(BuildContext context,id) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: 200,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 22,),
+                  Text("Sign up to wishlist this product",
+                    style: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  Padding(
+                    padding:   EdgeInsets.symmetric(horizontal: 12.0,vertical: 40),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Cancelled")));
+                                },
+                                child:  Text("cancel",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  Navigator.push(context, MaterialPageRoute(builder
+                                      : (context) => LoginPage()));
+                                  setState(() {});
+                                },
+                                child:  Text("ok",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

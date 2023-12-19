@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
 import 'package:dio/dio.dart';
 import 'package:opencart_ecommapp1/View/screens/Manufacturer/manufacture_products.dart';
+import 'package:provider/provider.dart';
 import '../../../Models/Banner/DAOBanner.dart';
 import '../../../Models/Betseller/DAOSeller.dart';
 import '../../../Models/Featured/DAOfeatured.dart';
@@ -12,8 +13,10 @@ import '../../../Models/Manufacturer/DAOManufactures.dart';
 import '../../../Models/Specials/DAOSpecialProducts.dart';
 import '../../../Models/products/list_of_product.dart';
 import '../../../Product/product_details.dart';
+import '../../../Provider/wishlist_provider.dart';
 import '../../../Utils/InMemory.dart';
 import '../../../Utils/background_image.dart';
+import '../../Auth/login.dart';
 import '../../LatestProduct/product_details.dart';
 import '../Banner/banner_details.dart';
 import '../BestSeller/bestseller.dart';
@@ -139,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final client = RestClient(Dio());
     client.specials("123", SessionId, "application/json", 10)
         .then((value) {
+          print("VALUE SPECIAL: ${value}");
       if (value.success == 1) {
         print("success");
         specialproduct.addAll(value.data!);
@@ -895,8 +899,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            // SizedBox(height: 5,),
-            Divider(),
+            SizedBox(height: 8,),
             Row(
               children: [
                 Text("Products For You", style: TextStyle(
@@ -933,116 +936,103 @@ class _HomeScreenState extends State<HomeScreen> {
                  product.length,
                      (index) {
                    var i = product[index];
-                   return Container(
-                     height: 600,
-                     decoration: BoxDecoration(
-                       border: Border.all(color: Colors.grey),
-                     ),
-                     child: SingleChildScrollView(
-                       child: Column(
-                         children: [
-                           Stack(
-                             children: [
-                               Container(
-                                 child: Image.network(
-                                   i.original_image,
-                                   fit: BoxFit.cover,
-                                   height: 135,
+                   return InkWell(
+                    onTap: (){
+                      Navigator.push(context, MaterialPageRoute(
+                          builder: (context) => ProductDetailScreen(id: i.product_id)
+                      ));},
+                     child: Container(
+                       height: 600,
+                       decoration: BoxDecoration(
+                         border: Border.all(color: Colors.grey),
+                       ),
+                       child: SingleChildScrollView(
+                         child: Column(
+                           children: [
+                             Stack(
+                               children: [
+                                 Center(
+                                   child: Image.network(
+                                     i.original_image,
+                                     fit: BoxFit.cover,
+                                     height: 135,
+                                   ),
                                  ),
-                               ),
-                               StatefulBuilder(
-                                   builder: (context, setState) {
-                                     bool isFavorite = true;
-                                     return Row(
-                                       mainAxisAlignment: MainAxisAlignment.end,
-                                       children: [
-                                         IconButton(
-                                             onPressed: () async {
-                                               print(i.id);
-                                               // FavroiteImages(i.post_id, i.is_favourite == "1"?"0": "1");\
-                                               // (InMemory.isLogged == true)
-                                               //     ? Addwishlist(i.product_id)
-                                               //     : showLoginConfirmation(
-                                               //     context);
-                                             },
-                                             icon: Icon(
-                                               // success
-                                               //     ? Icons.favorite_rounded
-                                               //     :
-                                                   Icons
-                                                   .favorite_border_outlined,
-                                               // color: (success)
-                                               //     ? PRIMARY
-                                               //     : Colors.grey,
-                                             )),
-                                       ],
-                                     );
-                                     //   (InMemory().wishlist1.contains(i.product_id)) ? Icon(Icons.favorite_rounded,color: PRIMARY,) :Icon(
-                                     //   success
-                                     //       ? Icons.favorite_rounded
-                                     //       : Icons.favorite_border_outlined,
-                                     //   color:  (success)
-                                     //       ? PRIMARY
-                                     //       : Colors.grey,
-                                     // ),);
-                                   }),
-                             ],
-                           ),
-                           SizedBox(
-                             height: 10,
-                           ),
-                           Row(
-                             children: [
-                               SizedBox(width: 6,),
-                               Text(
-                                 i.name,
-                                 style: TextStyle(fontSize: 15),
-                               ),
-                             ],
-                           ),
-                           Row(
-                             children: [
-                               SizedBox(width: 6,),
-                               Text(
-                                 i.price_formated.toString(),
-                                 style: TextStyle(fontSize: 18,
-                                     // color: Colors.black,
-                                     fontWeight: FontWeight.w600),
-                               ),
-                             ],
-                           ),
-                           Row(
-                             children: [
-                               SizedBox(width: 6,),
-                               Text(
-                                 "Free Delivery",
-                                 style: TextStyle(fontSize: 12),
-                               ),
-                             ],
-                           ),
-                           Row(
-                             children: [
-                               Container(
-                                 margin: EdgeInsets.all(8),
-                                  height: 25,
-                                 width: 60,
-                                 decoration: BoxDecoration(
-                                   color: Colors.green,
-                                   borderRadius: BorderRadius.circular(12.0),
-                                 ),
-                                 child: Row(
-                                   mainAxisAlignment: MainAxisAlignment.center,
-                                   children: [
-                                     Text(i.rating.toString(),
-                                       style: TextStyle(color: Colors.white),),
-                                     Icon(Icons.star,size: 14,color: Colors.white,),
-                                   ],
-                                 ),
-                                  ),
-                               Text("(${i.quantity})"),
-                             ],
-                           ),
-                         ],
+                                 StatefulBuilder(
+                                     builder: (context, setState) {
+                                       bool isFavorite = true;
+                                       return Row(
+                                         mainAxisAlignment: MainAxisAlignment.end,
+                                         children: [
+                                           IconButton(
+                                               onPressed: () async {
+                                                  if (InMemory.isLogged == true){
+                                                 context.read<WishlistProvider>().increment(i.product_id);
+                                                  } else {
+                                                    showLoginConfirmation(context,i.product_id);
+                                                  }
+                                                  setState(() {});
+                                               },
+                                               icon: Icon(
+                                                     Icons
+                                                     .favorite_border_outlined,
+                                               )),
+                                         ],
+                                       );
+                                       //   (InMemory().wishlist1.contains(i.product_id)) ? Icon(Icons.favorite_rounded,color: PRIMARY,) :Icon(
+                                       //   success
+                                       //       ? Icons.favorite_rounded
+                                       //       : Icons.favorite_border_outlined,
+                                       //   color:  (success)
+                                       //       ? PRIMARY
+                                       //       : Colors.grey,
+                                       // ),);
+                                     }),
+                               ],
+                             ),
+                             SizedBox(
+                               height: 10,
+                             ),
+                             Text(
+                               i.name,
+                               style: TextStyle(fontSize: 15),
+                             ),
+                             Text(
+                               i.price_formated.toString(),
+                               style: TextStyle(fontSize: 18,
+                                   // color: Colors.black,
+                                   fontWeight: FontWeight.w600),
+                             ),
+                             SizedBox(width: 6,),
+                             Text(
+                               "Free Delivery",
+                               style: TextStyle(fontSize: 12),
+                             ),
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               children: [
+                                 Container(
+                                   margin: EdgeInsets.all(8),
+                                    height: 25,
+                                   width: 60,
+                                   decoration: BoxDecoration(
+                                     color: Colors.green,
+                                     borderRadius: BorderRadius.circular(12.0),
+                                   ),
+                                   child: Row(
+                                     mainAxisAlignment: MainAxisAlignment.center,
+                                     children: [
+                                       Text(i.rating.toString(),
+                                         style: TextStyle(color: Colors.white),),
+                                       Icon(Icons.star,size: 14,color: Colors.white,),
+                                     ],
+                                   ),
+                                    ),
+                                 Text("(${i.quantity})"),
+                               ],
+                             ),
+                           ],
+                         ),
                        ),
                      ),
                    );
@@ -1055,7 +1045,88 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
+  void showLoginConfirmation(BuildContext context,id) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: 200,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 22,),
+                  Text("Sign up to wishlist this product",
+                    style: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  Padding(
+                    padding:   EdgeInsets.symmetric(horizontal: 12.0,vertical: 40),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Cancelled")));
+                                },
+                                child:  Text("cancel",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  // foregroundColor: Colors.white,
+                                  // backgroundColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder( //to set border radius to button
+                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
+                                ),
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  Navigator.push(context, MaterialPageRoute(builder
+                                      : (context) => LoginPage()));
+                                  setState(() {});
+                                },
+                                child:  Text("ok",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                    // color: Colors.red
+                                  ),),
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 

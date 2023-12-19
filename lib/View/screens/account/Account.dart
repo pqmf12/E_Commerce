@@ -5,6 +5,7 @@ import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
 import 'package:opencart_ecommapp1/Utils/InMemory.dart';
 import 'package:opencart_ecommapp1/View/screens/Language/languages_list.dart';
 import '../../../Models/Account/DAOInformation.dart';
+import '../../../Models/Account/account.dart';
 import '../Language/timezone.dart';
 import 'Profile.dart';
 import 'edit_profile.dart';
@@ -12,18 +13,20 @@ import 'package:dio/dio.dart';
 import 'list_details.dart';
 
 
-class Account extends StatefulWidget {
-  const Account({Key? key}) : super(key: key);
+class AccountPage extends StatefulWidget {
+   AccountPage({Key? key, this.callback}) : super(key: key);
+  final callback;
 
   @override
-  State<Account> createState() => _AccountState();
+  State<AccountPage> createState() => _AccountPageState();
 }
 
-class _AccountState extends State<Account> {
+class _AccountPageState extends State<AccountPage> {
   List<InformationList> accountdata = [];
 
   @override
   void initState() {
+    getprofile();
     accountlist();
     super.initState();
   }
@@ -44,6 +47,24 @@ class _AccountState extends State<Account> {
       }
       setState(() {
       });
+    });
+  }
+  Profile profile = Profile();
+
+  void getprofile() async{
+    final client = RestClient(Dio());
+    SessionId = await InMemory().getSession();
+    print(":getprofile called");
+    client.account("123", SessionId, "application/json",
+      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+    ).then((value) {
+      if(value.success == 1) {
+        print("successs");
+        profile = value.data!;
+        print(JsonEncoder().convert(profile));
+        // print("sessionID ${InMemory().getSession().toString()}");
+      }else{}
+      setState(() {});
     });
   }
 
@@ -71,14 +92,19 @@ class _AccountState extends State<Account> {
                         ),
                       ),
                       SizedBox(width: 25,),
-                      Text("Alex",style: TextStyle(
+                      Text(profile.firstname ?? " ",style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 20,
                       ),),
-                      SizedBox(width: 165,),
+                      SizedBox(width: 150,),
                       IconButton(onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder
-                            : (context) => ProfilePage()
+                            : (context) => ProfilePage(
+                          callback: () {
+                            getprofile();
+                            setState(() {});
+                          }
+                        )
                         ));
                       },
                           icon: Icon(Icons.arrow_right_outlined)),

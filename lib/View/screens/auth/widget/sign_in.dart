@@ -43,7 +43,7 @@ class _Page1State extends State<Page1> {
         print("Session ID: ${setn.session}");
            // InMemory().setSession(setn.session);
         SessionId = setn.session;
-        login();
+        // login();
       }else{
         print("fail");
       }
@@ -51,37 +51,37 @@ class _Page1State extends State<Page1> {
   }
 
 
-   void login() async {
-    print("login called");
-    final client = RestClient(Dio());
-    print(emailController.text);
-    print(passwordController.text);
-    SessionId = await InMemory().getSession();
-    client.getLogin(
-       jsonEncode({ "email": emailController.text,
-        "password": passwordController.text,}),
-        SessionId, '123')
-        .then((value) {
-      print("setn.session" + setn.session);
-      print("emailController.text" + emailController.text);
-      print("passwordController.text" + passwordController.text);
-      if (value.success == 1) {
-        print("Logged In");
-        // sessionID = setn.session;
-        InMemory().setUser(value.data!).then((value) {
-          widget.callback();
-        });
-      }
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Invalid input fields"))
-        );
-        print("something went wrong  ?? ""}");
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //     SnackBar("${value.message ?? "Something went wrong"}"));
-      }
-    });
-  }
+  //  void login() async {
+  //   print("login called");
+  //   final client = RestClient(Dio());
+  //   print(emailController.text);
+  //   print(passwordController.text);
+  //   SessionId = await InMemory().getSession();
+  //   client.getLogin(
+  //      jsonEncode({ "email": emailController.text,
+  //       "password": passwordController.text,}),
+  //       SessionId, '123')
+  //       .then((value) {
+  //     print("setn.session" + setn.session);
+  //     print("emailController.text" + emailController.text);
+  //     print("passwordController.text" + passwordController.text);
+  //     if (value.success == 1) {
+  //       print("Logged In");
+  //       // sessionID = setn.session;
+  //       InMemory().setUser(value.data!).then((value) {
+  //         widget.callback();
+  //       });
+  //     }
+  //     else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text("Invalid input fields"))
+  //       );
+  //       print("something went wrong  ?? ""}");
+  //       // ScaffoldMessenger.of(context).showSnackBar(
+  //       //     SnackBar("${value.message ?? "Something went wrong"}"));
+  //     }
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {

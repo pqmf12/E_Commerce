@@ -48,6 +48,7 @@ dependencies:
   firebase_core:
   firebase_auth:
   provider:
+  speech_to_text:
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +78,7 @@ flutter:
   assets:
     - assets/images/
     - assets/OnboardImage/
+    - assets/eComm/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

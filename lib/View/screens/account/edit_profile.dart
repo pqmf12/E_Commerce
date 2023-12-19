@@ -1,12 +1,24 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
+import 'package:dio/dio.dart';
+import 'package:opencart_ecommapp1/Utils/AppConstants.dart';
+import 'package:opencart_ecommapp1/Utils/InMemory.dart';
 
+import '../../../Models/Account/account.dart';
 
 class EditPage extends StatefulWidget {
-   EditPage({Key? key}) : super(key: key);
-
+   EditPage({Key? key,
+     this.callback, this.first_name, this.last_name,
+     this.phone, this.email}) : super(key: key);
+   final callback;
+   final first_name;
+   final last_name;
+   final phone;
+   final email;
 
   @override
   State<EditPage> createState() => _EditPageState();
@@ -16,8 +28,8 @@ class _EditPageState extends State<EditPage> {
   File? pickedImage;
   TextEditingController firstnameController = TextEditingController();
   TextEditingController lastnameController = TextEditingController();
-  TextEditingController dobController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController telephoneController = TextEditingController();
   TextEditingController stateController = TextEditingController();
   TextEditingController cityController = TextEditingController();
   TextEditingController zipController = TextEditingController();
@@ -79,7 +91,6 @@ class _EditPageState extends State<EditPage> {
     );
   }
 
-
   Future<void> pickImage(ImageSource imageType) async {
     final ImagePicker _picker = ImagePicker();
     try {
@@ -124,7 +135,6 @@ class _EditPageState extends State<EditPage> {
   //   }
   // }
 
-
   final _formKey = GlobalKey<FormState>();
   String? Statecode = "Madhaya Paradesh";
   String? Citycode = "Balaghat";
@@ -149,12 +159,45 @@ class _EditPageState extends State<EditPage> {
   var listofcitycode = [];
   // var listofstateCode = [];
   bool canPressBtn = true;
+  String SessionId = "";
+
+  @override
+   void initState() {
+     super.initState();
+     firstnameController.text = widget.first_name ?? "";
+     lastnameController.text = widget.last_name ?? "";
+     emailController.text = widget.email ?? "";
+     telephoneController.text = widget.phone ?? "";
+   }
+
+  Future<void> update() async {
+    print("Update called");
+    final client = RestClient(Dio());
+    SessionId = await InMemory().getSession();
+    client.update_profile("123", SessionId, "application/json",
+        'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+        json.encode({
+          "firstname":  firstnameController.text,
+          "lastname": lastnameController.text,
+          "email": emailController.text,
+          "telephone": telephoneController.text,
+        })
+    ).then((value) {
+      if (value.success == 1){
+        print("object");
+        // Profile profile = Profile();
+        widget.callback();
+        Navigator.pop(context);
+      }else{}
+      setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Edit Profile",
+        title: Text("Update your Profile",
           style: TextStyle(fontWeight: FontWeight.w600,fontSize: 18),),
         elevation: 0,
         // centerTitle: true,
@@ -206,20 +249,12 @@ class _EditPageState extends State<EditPage> {
                     ],
                   ),
                 ),
-
                 Padding(
                   padding:  EdgeInsets.all(10.0),
                   child: Container(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      // mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text("Personal Details : ",
-                              style: TextStyle(fontWeight: FontWeight.w600,fontSize: 18),),
-                          ],
-                        ),
-                        SizedBox(height: 18,),
                         Row(
                           children: [
                             SizedBox(width: 10,),
@@ -292,7 +327,7 @@ class _EditPageState extends State<EditPage> {
                         Row(
                           children: [
                             SizedBox(width: 10,),
-                            Text("DOB"),
+                            Text("Email"),
                           ],
                         ),
                         Container(
@@ -302,7 +337,7 @@ class _EditPageState extends State<EditPage> {
                               boxShadow: [
                                 BoxShadow(
                                     offset: Offset(1,1),
-                                    blurRadius: 2,
+                                    blurRadius: 1,
                                     color: Colors.grey
                                 ),
                               ]
@@ -314,369 +349,60 @@ class _EditPageState extends State<EditPage> {
                               }
                               return null;
                             },
-                            controller: dobController,
-                            readOnly: true,
-                            onTap: () async {
-                              DateTime? pickedDate = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(1950),
-                                  //DateTime.now() - not to allow to choose before today.
-                                  lastDate: DateTime(2100));
-
-                              if (pickedDate != null) {
-                                print(
-                                    pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
-                                String formattedDate = "";
-                                // DateFormat('dd/MM/yyyy').format(pickedDate);
-                                print(
-                                    formattedDate); //formatted date output using intl package =>  2021-03-16
-                                setState(() {
-                                  dobController.text =
-                                      formattedDate; //set output date to TextField value.
-                                });
-                              } else {}
-                            },
+                            controller: emailController,
                             decoration: InputDecoration(
                               border: InputBorder.none,
-                              suffixIcon: IconButton(
-                                onPressed: () async {
-                                  DateTime? pickedDate = await showDatePicker(
-                                      context: context,
-                                      initialDate: DateTime.now(),
-                                      firstDate: DateTime(1950),
-                                      //DateTime.now() - not to allow to choose before today.
-                                      lastDate: DateTime(2100));
-
-                                  if (pickedDate != null) {
-                                    print(
-                                        pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
-                                    String formattedDate = "";
-                                    // DateFormat('dd-MM-yyyy').format(pickedDate);
-                                    print(
-                                        formattedDate); //formatted date output using intl package =>  2021-03-16
-                                    setState(() {
-                                      dobController.text =
-                                          formattedDate; //set output date to TextField value.
-                                    });
-                                  } else {}
-                                },
-                                icon: Icon(Icons.arrow_drop_down_outlined),),
                               contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "DOB"
+                              // labelText: "Last Name"
                             ),
                           ),
                         ),
                         SizedBox(height: 8,),
+                        Row(
+                          children: [
+                            SizedBox(width: 10,),
+                            Text("Telephone"),
+                          ],
+                        ),
+                        Container(
+                          height: 45,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                    offset: Offset(1,1),
+                                    blurRadius: 1,
+                                    color: Colors.grey
+                                ),
+                              ]
+                          ),
+                          child: TextFormField(
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Required field';
+                              }
+                              return null;
+                            },
+                            controller: telephoneController,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                              // labelText: "Last Name"
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-
-                Padding(
-                  padding:  EdgeInsets.all(10.0),
-                  child: Container(
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text("Address : ",
-                              style: TextStyle(fontWeight: FontWeight.w600,fontSize: 18),),
-                          ],
-                        ),
-                        SizedBox(height: 18,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("Street Address"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: addressController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "Street Address"
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8,),
-
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("State"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          // child:
-                          // DropdownButton<String>(
-                          //     underline: Container(),
-                          //     isExpanded: true,
-                          //     value:  dropdownvalue2 ,
-                          //     hint: Text("Select State"),
-                          //     style:  TextStyle(color: Colors.black),
-                          //     onChanged: (String? newValue) {
-                          //       setState(() {
-                          //         dropdownvalue2 = newValue!;
-                          //         print("value: "+newValue);
-                          //       });
-                          //     },
-                          //     items: [
-                          //       DropdownMenuItem(
-                          //         value: "",
-                          //         child: Padding(
-                          //           padding: const EdgeInsets.all(8.0),
-                          //           child: Text("Select State"),
-                          //         ),
-                          //       ),
-                          //       ...listofStates.map<DropdownMenuItem<String>>((value) {
-                          //         return DropdownMenuItem(
-                          //           value: value,
-                          //           child: Padding(
-                          //             padding:  EdgeInsets.all(8.0),
-                          //             child: Padding(
-                          //               padding: const EdgeInsets.all(8.0),
-                          //               child: Text(value),
-                          //             ),
-                          //           ),
-                          //         );
-                          //       }).toList(),
-                          //     ]
-                          // ),
-                        ),
-                        SizedBox(height: 8,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("City"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          // child: DropdownButton<String>(
-                          //   isExpanded: true,
-                          //   value: dropdownvalue3,
-                          //   // icon:  Icon(Icons.arrow_drop_down_sharp,color:  Color(0xFF9E32DD),),
-                          //   // elevation: 16,
-                          //   hint: Text("Select City"),
-                          //   style:  TextStyle(color: Colors.black),
-                          //   underline: Container(),
-                          //   onChanged: (String? newValue) {
-                          //     setState(() {
-                          //       dropdownvalue3 = newValue!;
-                          //       print("value: "+newValue);
-                          //         });
-                          //   },
-                          //   items:  listofcity.map<DropdownMenuItem<String>>((value) {
-                          //     return DropdownMenuItem(
-                          //       value: value,
-                          //       child: Padding(
-                          //         padding: const EdgeInsets.all(8.0),
-                          //         child: Padding(
-                          //           padding: const EdgeInsets.all(8.0),
-                          //           child: Text(value,style: TextStyle(color: Colors.black),),
-                          //         ),
-                          //       ),
-                          //     );
-                          //   }).toList(),
-                          // ),
-                        ),
-                        // Container(
-                        //   height: 66,
-                        //   width: 450,
-                        //   decoration: BoxDecoration(
-                        //       color: Colors.white,
-                        //       boxShadow: [
-                        //         BoxShadow(
-                        //             offset: Offset(1,1),
-                        //             blurRadius: 1,
-                        //             color: Colors.grey
-                        //         ),
-                        //       ]
-                        //   ),
-                        //   margin: EdgeInsets.symmetric(horizontal: 12),
-                        //   child: Column(
-                        //     // mainAxisAlignment: MainAxisAlignment.center,
-                        //     children: [
-                        //       Row(
-                        //         mainAxisAlignment: MainAxisAlignment.start,
-                        //         children: [
-                        //           SizedBox(width: 15,),
-                        //           Text("City",style: TextStyle(fontSize:12, color: Colors.grey.shade700),),
-                        //         ],
-                        //       ),
-                        //       DropdownButton<String>(
-                        //         isExpanded: true,
-                        //         value: dropdownvalue3,
-                        //         // icon:  Icon(Icons.arrow_drop_down_sharp,color:  Color(0xFF9E32DD),),
-                        //         // elevation: 16,
-                        //         hint: Text("Select City"),
-                        //         style:  TextStyle(color: Colors.black),
-                        //         underline: Container(),
-                        //         onChanged: (String? newValue) {
-                        //           setState(() {
-                        //             dropdownvalue3 = newValue!;
-                        //             print("value: "+newValue);
-                        //             String Statecode = (listofstatecode.elementAt(listofcity.indexOf(newValue)));
-                        //             print(Statecode);
-                        //             print(listofstatecode);
-                        //             print(listofcity);
-                        //             Citycode = listofcitycode.elementAt(listofcity.indexOf(newValue));
-                        //           });
-                        //           // final selectedStateId = getStateId(newValue);
-                        //           // This is called when the user selects an item.
-                        //           // setState(() {
-                        //           //   selectedItem = newValue!;
-                        //           //   SelectDistricts != null;
-                        //           //   print("value: "+newValue);
-                        //           //   String StateId = (listofStatesId.elementAt(listofStates.indexOf(newValue)));
-                        //           //   DistrictList(StateId);
-                        //           //   print(listofStatesId);
-                        //           //   print(listofStates);
-                        //           //   print(listofStatesId.elementAt(listofStates.indexOf(newValue)));
-                        //           //   print(StateId);
-                        //           // });
-                        //         },
-                        //         items:  listofcity.map<DropdownMenuItem<String>>((value) {
-                        //           return DropdownMenuItem(
-                        //             value: value,
-                        //             child: Padding(
-                        //               padding: const EdgeInsets.all(8.0),
-                        //               child: Text(value),
-                        //             ),
-                        //           );
-                        //         }).toList(),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
-                        // Container(
-                        //   height: 55,
-                        //   decoration: BoxDecoration(
-                        //       color: Colors.white,
-                        //       boxShadow: [
-                        //         BoxShadow(
-                        //             offset: Offset(1,1),
-                        //             blurRadius: 2,
-                        //             color: Colors.grey
-                        //         ),
-                        //       ]
-                        //   ),
-                        //   child: TextFormField(
-                        //     controller: cityController,
-                        //     decoration: InputDecoration(
-                        //         border: InputBorder.none,
-                        //         contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                        //         labelText: "City"
-                        //     ),
-                        //   ),
-                        // ),
-                        SizedBox(height: 8,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("Zip Code"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 2,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: zipController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "Zip Code"
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 30,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 40,
-                              width: 300,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  // foregroundColor: Colors.white,
-                                  // backgroundColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder( //to set border radius to button
-                                      borderRadius: BorderRadius.circular(12)),// foreground (text) color
-                                ),
-                                onPressed: (){
-                                  if (_formKey.currentState!.validate()) {
-                                  }
-                                },
-                                child:  Text("Save",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 18,
-                                      // color: Colors.red
-                                  ),),
-                              ),
-                            )
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                )
+                SizedBox(height: 15,),
+                ElevatedButton(
+                    onPressed: (){
+                      if(_formKey.currentState!.validate()){
+                        update();
+                      }
+                    },
+                    child: Text("Save"))
               ],
             ),
           ),
