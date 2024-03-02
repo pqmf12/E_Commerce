@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:opencart_ecommapp1/View/screens/Cart/cart.dart';
+import 'package:opencart_ecommapp1/View/screens/HomeScreen/homescreen.dart';
 
 class Order extends StatefulWidget {
   const Order({Key? key}) : super(key: key);
@@ -11,6 +13,16 @@ class _OrderState extends State<Order> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: Container(
+        child: Column(
+          children: [
+            Center(
+              child: Image.asset('assets/eComm/order.png'),
+            ),
+            Text("Place Order to see order details",style: TextStyle(fontSize: 18),),
+          ],
+        ),
+      ),
       // body: SingleChildScrollView(
       //   child: Column(
       //     children: [

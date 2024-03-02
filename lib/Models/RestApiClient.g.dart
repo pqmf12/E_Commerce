@@ -1487,6 +1487,44 @@ class _RestClient implements RestClient {
     return value;
   }
 
+  @override
+  Future<DAOAddWishlist> changepswd(
+    String Merchant_Id,
+    String Session,
+    String cookie,
+    dynamic data,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{
+      r'X-Oc-Merchant-Id': Merchant_Id,
+      r'X-Oc-Session': Session,
+      r'Cookie': cookie,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    final _data = data;
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<DAOAddWishlist>(Options(
+      method: 'PUT',
+      headers: _headers,
+      extra: _extra,
+      contentType: 'multipart/form-data',
+    )
+            .compose(
+              _dio.options,
+              'account/password',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
+    final value = DAOAddWishlist.fromJson(_result.data!);
+    return value;
+  }
+
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||

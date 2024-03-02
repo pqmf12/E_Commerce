@@ -375,4 +375,12 @@ abstract class RestClient {
       @Header("Cookie") String cookie,
       );
 
+  @MultiPart()
+  @PUT('account/password')
+  Future<DAOAddWishlist> changepswd(
+      @Header("X-Oc-Merchant-Id") String Merchant_Id,
+      @Header("X-Oc-Session") String Session,
+      @Header("Cookie") String cookie,
+      @Body() data,
+      );
 }

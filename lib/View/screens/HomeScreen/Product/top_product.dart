@@ -15,6 +15,7 @@ import '../../../../Models/products/list_of_product.dart';
 import '../../../../Product/product_details.dart';
 import '../../../../Provider/wishlist_provider.dart';
 import '../../../../Utils/InMemory.dart';
+import '../../auth/Auth_Provider/login_provider.dart';
 
 class TopProducts extends StatefulWidget {
    TopProducts({Key? key,}) : super(key: key);
@@ -35,7 +36,7 @@ class _TopProductsState extends State<TopProducts> {
   void initState() {
     super.initState();
     Product();
-    fetchLogged();
+    // fetchLogged();
   }
 
   void Product() {
@@ -189,18 +190,18 @@ class _TopProductsState extends State<TopProducts> {
   int logStatus = 0;
   String islogged = "";
 
-  void fetchLogged() {
-    print("fetching logged");
-    InMemory().init().then((value) {
-      // if (isDisposed) return;
-      if (InMemory.isLogged) {
-        logStatus = 1;
-      } else {
-        logStatus = 2;
-      }
-      setState(() {});
-    });
-  }
+  // void fetchLogged() {
+  //   print("fetching logged");
+  //   InMemory().init().then((value) {
+  //     // if (isDisposed) return;
+  //     if (InMemory.isLogged) {
+  //       logStatus = 1;
+  //     } else {
+  //       logStatus = 2;
+  //     }
+  //     setState(() {});
+  //   });
+  // }
 
 
   @override
@@ -257,7 +258,10 @@ class _TopProductsState extends State<TopProducts> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       IconButton(onPressed: ( ){
-                                        if (InMemory.isLogged == true){
+                                        // if (InMemory.isLogged == true)
+                                        if (context.read<LoginProvider>().isLogged)
+                                        // Provider.of<LoginProvider>(context, listen: false);
+                                        {
                                           // addwishlist(i.product_id)
                                           context.read<WishlistProvider>().increment(i.product_id);
                                          // .then((value)
@@ -268,7 +272,8 @@ class _TopProductsState extends State<TopProducts> {
                                          //      });
                                          //    }
                                          //  });
-                                        } else {
+                                        }
+                                        else {
                                           showLoginConfirmation(context,i.product_id);
                                         }
                                         setState(() {});
@@ -333,7 +338,7 @@ class _TopProductsState extends State<TopProducts> {
                         ],
                       ),
                     );
-        }
+                     }
                   );
                 }),
           ),

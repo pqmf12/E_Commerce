@@ -6,7 +6,9 @@ import 'package:opencart_ecommapp1/Models/Session/session.dart';
 import 'package:opencart_ecommapp1/View/Auth/signup.dart';
 import 'package:dio/dio.dart';
 import 'package:opencart_ecommapp1/View/screens/HomeScreen/homescreen.dart';
+import 'package:provider/provider.dart';
 import '../../Utils/InMemory.dart';
+import '../screens/auth/Auth_Provider/login_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -19,63 +21,69 @@ class _LoginPageState extends State<LoginPage> {
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
   bool _obscureText = true;
+  bool canPressBtn = true;
 
-  String SessionId = '';
-  String sessionid = '';
+  // String SessionId = '';
+  // String sessionid = '';
 
-  Data setn =  Data();
+  // Data setn =  Data();
 
-  void session() {
-    final client = RestClient(Dio());
-    print("session called");
-    client.Session("123", "application/json", "application/json", "voluptate")
-        .then((value) {
-      if(value.success == 1) {
-        print("session success");
-        setn = value.data!;
-        print("Session ID: ${setn.session}");
-        InMemory().setSession(setn.session);
-        sessionid = setn.session;
-        print("new sesionid ${sessionid}");
-        login();
-      }else{
-        print("fail");
-      }
-      setState(() {});
-    });
-  }
+  // void session() {
+  //   final client = RestClient(Dio());
+  //   print("session called");
+  //   client.Session("123", "application/json", "application/json", "voluptate")
+  //       .then((value) {
+  //     if(value.success == 1) {
+  //       print("session success");
+  //       setn = value.data!;
+  //       print("Session ID: ${setn.session}");
+  //       InMemory().setSession(setn.session);
+  //       sessionid = setn.session;
+  //       print("new sesionid ${sessionid}");
+  //       login();
+  //     }else{
+  //       print("fail");
+  //     }
+  //     setState(() {});
+  //   });
+  // }
 
-  void login() async {
-    print("login called");
-    final client = RestClient(Dio());
-    print(emailController.text);
-    print(passwordController.text);
-    SessionId = await InMemory().getSession();
-    client.getLogin(
-        jsonEncode({ "email": emailController.text,
-          "password": passwordController.text,}),
-        SessionId, '123',
-      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
-       )
-        .then((value) {
-      print("emailController.text" + emailController.text);
-      print("passwordController.text" + passwordController.text);
-      print("sessioid... ${SessionId}");
-      if (value.success == 1) {
-        InMemory().setUser(value.data!).then((value) {});
-        print("Logged In");
-         Navigator.pop(context);
-         print(JsonEncoder().convert(value.data));
-      }
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Invalid input fields"))
-        );
-        print("something went wrong  ?? ""}");
-      }
-      setState(() {});
-    });
-  }
+  // void login() async {
+  //   setState(() {
+  //     canPressBtn = false;
+  //   });
+  //   print("login called");
+  //   final client = RestClient(Dio());
+  //   print(emailController.text);
+  //   print(passwordController.text);
+  //   SessionId = await InMemory().getSession();
+  //   client.getLogin(
+  //       jsonEncode({ "email": emailController.text,
+  //         "password": passwordController.text,}),
+  //       SessionId, '123',
+  //     'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
+  //      )
+  //       .then((value) {
+  //     print("emailController.text" + emailController.text);
+  //     print("passwordController.text" + passwordController.text);
+  //     print("sessioid... ${SessionId}");
+  //     if (value.success == 1) {
+  //       InMemory().setUser(value.data!).then((value) {});
+  //       print("Logged In");
+  //        Navigator.pop(context);
+  //        print(JsonEncoder().convert(value.data));
+  //     }
+  //     else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text("Invalid input fields"))
+  //       );
+  //       print("something went wrong  ?? ""}");
+  //     }
+  //     setState(() {
+  //       canPressBtn = true;
+  //     });
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text("Login here"),
       ),
-      body:  SingleChildScrollView(
+      body: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -190,14 +198,20 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(12)),// foreground (text) color
                           ),
                           onPressed: (){
-                            session();
+                            // session();
+                            context.read<LoginProvider>().loggedin(
+                                emailController.text, passwordController.text)
+                                .then((value) => Navigator.pop(context));
+                            setState(() {});
                           },
-                          child:  Text("LogIn",
+                          child: canPressBtn
+                            ?  Text("LogIn",
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: 18,
                               // color: Colors.red
-                            ),),
+                            ),)
+                              : CircularProgressIndicator()
                         ),
                       )
                     ],

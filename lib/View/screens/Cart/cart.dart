@@ -10,6 +10,7 @@ import '../../../Models/Cart/cart_item_provider.dart';
 import '../../../Product/product_details.dart';
 import '../../Auth/login.dart';
 import '../Payment/checkout.dart';
+import '../auth/Auth_Provider/login_provider.dart';
 
 class CartPage extends StatefulWidget {
    CartPage({Key? key, }) : super(key: key);
@@ -356,11 +357,17 @@ class _CartPageState extends State<CartPage> {
                 Expanded(
                   child: InkWell(
                     onTap: () {
-                    if (InMemory.isLogged == true){
+                    // if (InMemory.isLogged == true)
+                    if (context.read<LoginProvider>().isLogged)
+                     // Provider.of<LoginProvider>(context, listen: false);
+                      {
                       Navigator.push(context, MaterialPageRoute(builder:
                           (contex) => CheckOutPage() ));
                       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You can proceed now")));
-                    } else {
+                    }
+                      // Provider.of<LoginProvider>(context, listen: true);
+                    else
+                      {
                     showLoginConfirmation(context);
                     }
                     setState(() {});

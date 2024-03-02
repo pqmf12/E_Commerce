@@ -14,6 +14,7 @@ import '../Models/Compare/DAOCompare.dart';
 import '../Models/products/product_details.dart';
 import '../Utils/InMemory.dart';
 import '../View/screens/Payment/checkout.dart';
+import '../View/screens/auth/Auth_Provider/login_provider.dart';
 import 'Compare/compare_products.dart';
 
 
@@ -47,7 +48,7 @@ class _DetailScreenState extends State<ProductDetailScreen> with TickerProviderS
     super.initState();
     // _pageController = PageController();
     ProductDetails();
-    fetchLogged();
+    // fetchLogged();
   }
 
   @override
@@ -200,18 +201,18 @@ class _DetailScreenState extends State<ProductDetailScreen> with TickerProviderS
   int logStatus = 0;
   String islogged = "";
 
-  void fetchLogged() {
-    print("fetching logged");
-    InMemory().init().then((value) {
-      // if (isDisposed) return;
-      if (InMemory.isLogged) {
-        logStatus = 1;
-      } else {
-        logStatus = 2;
-      }
-      setState(() {});
-    });
-  }
+  // void fetchLogged() {
+  //   print("fetching logged");
+  //   InMemory().init().then((value) {
+  //     // if (isDisposed) return;
+  //     if (InMemory.isLogged) {
+  //       logStatus = 1;
+  //     } else {
+  //       logStatus = 2;
+  //     }
+  //     setState(() {});
+  //   });
+  // }
 
   int _count = 0;
   int get count => _count;
@@ -468,7 +469,9 @@ class _DetailScreenState extends State<ProductDetailScreen> with TickerProviderS
                                 borderRadius: BorderRadius.circular(6.0),
                               ),),
                             onPressed: () {
-                              if (InMemory.isLogged) {
+                              // if (InMemory.isLogged)
+                              if (context.watch<LoginProvider>().isLogged)
+                              {
                                 Navigator.push(
                                     context, MaterialPageRoute(builder:
                                     (context) => CheckOutPage()));

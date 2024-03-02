@@ -9,12 +9,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Fonts/Font_changer.dart';
 import 'Models/Cart/DAOCart.dart';
 import 'Models/Cart/cart_item_provider.dart';
+import 'Provider/get_profile_provider.dart';
 import 'Provider/wishlist_provider.dart';
 import 'Theme/theme_changer_provider.dart';
 import 'Utils/InMemory.dart';
 import 'View/Onboard_Screen.dart';
 import 'View/screens/HomeScreen/home_screen.dart';
 import 'package:dio/dio.dart';
+import 'View/screens/auth/Auth_Provider/login_provider.dart';
 import 'firebase_options.dart';
 
 
@@ -54,23 +56,23 @@ class _MyAppState extends State<MyApp> {
       print("completed");
       setState(() {});
     });
-    fetchLogged();
+    // fetchLogged();
     session();
     super.initState();
   }
 
-  void fetchLogged() {
-    print("fetching logged");
-    InMemory().init().then((value) {
-      // if (isDisposed) return;
-      if (InMemory.isLogged) {
-        logStatus = 1;
-      } else {
-        logStatus = 2;
-      }
-      setState(() {});
-    });
-  }
+  // void fetchLogged() {
+  //   print("fetching logged");
+  //   InMemory().init().then((value) {
+  //     // if (isDisposed) return;
+  //     if (InMemory.isLogged) {
+  //       logStatus = 1;
+  //     } else {
+  //       logStatus = 2;
+  //     }
+  //     setState(() {});
+  //   });
+  // }
 
   void session() {
     final client = RestClient(Dio ());
@@ -97,7 +99,10 @@ class _MyAppState extends State<MyApp> {
           ChangeNotifierProvider(create: (_) => ThemeChanger()),
           ChangeNotifierProvider(create: (_) => CartItemProvider()),
           ChangeNotifierProvider(create: (_) => WishlistProvider()),
+          ChangeNotifierProvider(create: (_) => ProfileProvider()),
+          ChangeNotifierProvider(create: (_) =>  LoginProvider()),
         ],
+
       child:  Builder(
         builder: (context) {
           final themeChanger = Provider.of<ThemeChanger>(context);
@@ -122,7 +127,7 @@ class _MyAppState extends State<MyApp> {
                 // : logStatus == 2
                 // ? OnboardingScreen(callback: fetchLogged,)
                 // : Scaffold()
-            home:  widget.showHome ? HomePage(callback: fetchLogged,) : OnboardingScreen(),
+            home:  widget.showHome ? HomePage() : OnboardingScreen(),
           );
         }
       ),

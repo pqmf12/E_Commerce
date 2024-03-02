@@ -21,6 +21,7 @@ import '../../LatestProduct/product_details.dart';
 import '../Banner/banner_details.dart';
 import '../BestSeller/bestseller.dart';
 import '../Featured_Product/product_details.dart';
+import '../auth/Auth_Provider/login_provider.dart';
 import 'Product/top_product.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -966,7 +967,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                          children: [
                                            IconButton(
                                                onPressed: () async {
-                                                  if (InMemory.isLogged == true){
+                                                  // if (InMemory.isLogged == true)
+                                                 if (context.read<LoginProvider>().isLogged) {
                                                  context.read<WishlistProvider>().increment(i.product_id);
                                                   } else {
                                                     showLoginConfirmation(context,i.product_id);

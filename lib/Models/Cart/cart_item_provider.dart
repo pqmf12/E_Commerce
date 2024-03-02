@@ -24,7 +24,7 @@ class CartItemProvider  with ChangeNotifier,  DiagnosticableTreeMixin {
   List<AddItem> data = [];
   List<ProductData> productdata  = [];
   ApiData? cartdata;
-  int get totalProductCount =>  cartdata!.total_product_count ?? 0;
+  int get totalProductCount =>  cartdata?.total_product_count ?? 0;
 
   Future<void> cartitems() async {
     SessionId = await InMemory().getSession();
@@ -51,9 +51,6 @@ class CartItemProvider  with ChangeNotifier,  DiagnosticableTreeMixin {
         print("fail");
       }
       return true;
-      // setState(() {
-      //   loaded = true;
-      // });
     });
   }
 
@@ -69,18 +66,13 @@ class CartItemProvider  with ChangeNotifier,  DiagnosticableTreeMixin {
         jsonEncode( {
           "product_id": product_id,
           "quantity": numOfItems})
-    )
-        .then((value) {
+     ).then((value) {
       if(value.success == 1){
         print("ADD TO CART success ::");
         print(SessionId);
         data.add(value.data!);
         cartitems();
-        // context.read<CartItemProvider>().increment();
         print(JsonEncoder().convert(value.data));
-        // ScaffoldMessenger.of(context).showSnackBar(SnackBar
-        //   (content: Text("Item Added to Cart")
-        // ));
       }
       else{
         print("fail");

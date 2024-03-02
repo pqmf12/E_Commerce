@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../../../Models/Account/account.dart';
 import '../../../Models/Cart/DAOCart.dart';
 import '../../../Models/Cart/cart_item_provider.dart';
+import '../../../Provider/get_profile_provider.dart';
 import '../../../Provider/wishlist_provider.dart';
 import '../../../Theme/dark_theme.dart';
 // import '../../../Theme/theme_changer_provider.dart';
@@ -23,12 +24,13 @@ import '../../../firebase_options.dart';
 import '../Cart/cart.dart';
 import '../WishList/wishlist.dart';
 import '../account/Account.dart';
+import '../auth/Auth_Provider/login_provider.dart';
 import '../category/category.dart';
 import 'homescreen.dart';
 import 'package:dio/dio.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key? key, required this.callback}) : super(key: key);
+  HomePage({Key? key,  this.callback}) : super(key: key);
   final callback;
 
   @override
@@ -36,7 +38,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  var ScreenTitle = ["Categories", "My Orders", "My Account"];
+  var ScreenTitle = ["Home","Categories", "My Orders",];
   int currScreen = 0;
   DateTime pre_backpress = DateTime.now();
   final ScrollController _scrollController = ScrollController();
@@ -48,25 +50,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    getprofile();
+    context.read<ProfileProvider>().getprofile();
   }
 
-  void getprofile() async{
-    final client = RestClient(Dio());
-    SessionId = await InMemory().getSession();
-    print(":getprofile called");
-    client.account("123", SessionId, "application/json",
-      'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
-     ).then((value) {
-      if(value.success == 1) {
-        print("successs");
-        profile = value.data!;
-        print(JsonEncoder().convert(profile));
-        // print("sessionID ${InMemory().getSession().toString()}");
-      }else{}
-      setState(() {});
-    });
-  }
 
   void scrollHomeToTop() {
     _scrollController.animateTo(
@@ -117,9 +103,9 @@ class _HomePageState extends State<HomePage> {
         return false;
       },
         child: Scaffold(
-            appBar:(currScreen != 0)
+            appBar:(currScreen != 3)
                 ?AppBar(
-                 title: Text(ScreenTitle[currScreen - 1]),
+                 title: Text(ScreenTitle[currScreen]),
                  actions: [
                 IconButton(onPressed: ( ){
                   Navigator.push(context, MaterialPageRoute(builder
@@ -129,10 +115,14 @@ class _HomePageState extends State<HomePage> {
                 Stack(
                   children: [
                     IconButton(onPressed: ( ){
-                      if (InMemory.isLogged == true){
+                      // if (InMemory.isLogged == true)
+                      //   Provider.of<LoginProvider>(context, listen: false);
+                      if (context.read<LoginProvider>().isLogged)
+                      {
                         Navigator.push(context, MaterialPageRoute(builder:
                             (context) =>  WishListPage()));
-                      } else {
+                      }
+                      else {
                         showLoginConfirmation(context);
                       }
                     },
@@ -165,21 +155,22 @@ class _HomePageState extends State<HomePage> {
                              (context) => CartPage()));
                        },
                            icon: Icon(Icons.shopping_cart_outlined)),
-                       Positioned(
-                         top: 0,
-                         right: 1,
-                         child:CircleAvatar(
-                           radius: 10, // Adjust the size of the avatar as needed
-                           backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
-                           child: Consumer<CartItemProvider>(builder: (context, cartItemProvider, child) {
-                             int totalCount = cartItemProvider.totalProductCount;
-                             return (totalCount == 0) ? Text("")
-                              : Center(
-                                 child: Text('$totalCount',
-                                   style: TextStyle(color: Colors.white),));
-                           },
-                           ),
-                         ),
+                       Consumer<CartItemProvider>(builder
+                           : (context, cartItemProvider, child) {
+                         int totalCount = cartItemProvider.totalProductCount;
+                           return (totalCount == 0) ? Text("")
+                           : Positioned(
+                             top: 0,
+                             right: 1,
+                             child:CircleAvatar(
+                               radius: 10, // Adjust the size of the avatar as needed
+                               backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
+                               child:Center(
+                                     child: Text('$totalCount',
+                                       style: TextStyle(color: Colors.white),))
+                             ),
+                           );
+                         }
                        ),
                      ],
                    ),
@@ -187,70 +178,70 @@ class _HomePageState extends State<HomePage> {
               elevation: 0,
             )
             :  AppBar(
-               title: Text("Home"),
-               actions: [
-               IconButton(onPressed: ( ){
-                    Navigator.push(context, MaterialPageRoute(builder
-                        : (context) => SearchPage()));
-               },
-               icon: Icon(Icons.search)),
-              Stack(
-                   children: [
-                     IconButton(onPressed: ( ){
-                       if (InMemory.isLogged == true){
-                         Navigator.push(context, MaterialPageRoute(builder:
-                             (context) =>  WishListPage()));
-                       } else {
-                         showLoginConfirmation(context);
-                       }
-                     },
-                         icon: Icon(Icons.favorite_outline)),
-                     Consumer<WishlistProvider>(
-                       builder: (context, wishitemProvider, child) {
-                         int totalCount =  wishitemProvider.wishlistcount;
-                         return (totalCount == 0) ? Text("")
-                        : Positioned(
-                           top: 0,
-                           right: 1,
-                           child: CircleAvatar(
-                             radius: 10, // Adjust the size of the avatar as needed
-                             backgroundColor: Colors.red, // Set the background color of the avatar
-                             child:Center(
-                                 child:
-                                 // Text('${context.watch<WishlistProvider>().totalcount(totalCount)}'),
-                                 Text('$totalCount',style: TextStyle(color: Colors.white),)
-                             ),
-                           ),
-                         );
-                       },
-                     ),
-                   ],
-                 ),
-             Stack(
-                   children: [
-                     IconButton(onPressed: ( ){
-                       Navigator.push(context, MaterialPageRoute(builder:
-                           (context) => CartPage()));
-                         },
-                         icon: Icon(Icons.shopping_cart_outlined)),
-                      Positioned(
-                           top: 0,
-                           right: 1,
-                           child:CircleAvatar(
-                             radius: 10, // Adjust the size of the avatar as needed
-                             backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
-                             child:  Consumer<CartItemProvider>(builder: (context, cartItemProvider, child) {
-                                int totalCount = cartItemProvider.totalProductCount;
-                             return Center(
-                             child: Text('$totalCount',
-                             style: TextStyle(color: Colors.white),));
-                               },
-                                 ),
-                              ),
-                         ),
-                   ],
-                 ),
-               ],
+               title: Text("My Account"),
+             //   actions: [
+             //   IconButton(onPressed: ( ){
+             //        Navigator.push(context, MaterialPageRoute(builder
+             //            : (context) => SearchPage()));
+             //   },
+             //   icon: Icon(Icons.search)),
+             //  Stack(
+             //       children: [
+             //         IconButton(onPressed: ( ){
+             //           if (InMemory.isLogged == true){
+             //             Navigator.push(context, MaterialPageRoute(builder:
+             //                 (context) =>  WishListPage()));
+             //           } else {
+             //             showLoginConfirmation(context);
+             //           }
+             //         },
+             //             icon: Icon(Icons.favorite_outline)),
+             //         Consumer<WishlistProvider>(
+             //           builder: (context, wishitemProvider, child) {
+             //             int totalCount =  wishitemProvider.wishlistcount;
+             //             return (totalCount == 0) ? Text("")
+             //            : Positioned(
+             //               top: 0,
+             //               right: 1,
+             //               child: CircleAvatar(
+             //                 radius: 10, // Adjust the size of the avatar as needed
+             //                 backgroundColor: Colors.red, // Set the background color of the avatar
+             //                 child:Center(
+             //                     child:
+             //                     // Text('${context.watch<WishlistProvider>().totalcount(totalCount)}'),
+             //                     Text('$totalCount',style: TextStyle(color: Colors.white),)
+             //                 ),
+             //               ),
+             //             );
+             //           },
+             //         ),
+             //       ],
+             //     ),
+             // Stack(
+             //       children: [
+             //         IconButton(onPressed: ( ){
+             //           Navigator.push(context, MaterialPageRoute(builder:
+             //               (context) => CartPage()));
+             //             },
+             //             icon: Icon(Icons.shopping_cart_outlined)),
+             //          Positioned(
+             //               top: 0,
+             //               right: 1,
+             //               child:CircleAvatar(
+             //                 radius: 10, // Adjust the size of the avatar as needed
+             //                 backgroundColor: Colors.red, // Set the background color of the avatar                       child: Center(
+             //                 child:  Consumer<CartItemProvider>(builder: (context, cartItemProvider, child) {
+             //                    int totalCount = cartItemProvider.totalProductCount;
+             //                 return Center(
+             //                 child: Text('$totalCount',
+             //                 style: TextStyle(color: Colors.white),));
+             //                   },
+             //                     ),
+             //                  ),
+             //             ),
+             //       ],
+             //     ),
+             //   ],
               elevation: 0,
               ),
             drawer:  CustomDrawer(context),
@@ -307,12 +298,7 @@ class _HomePageState extends State<HomePage> {
     if (currScreen == 0) return HomeScreen(Controller:  _scrollController,);
     if (currScreen == 1) return  Category();
     if (currScreen == 2) return  Order();
-    if (currScreen == 3) return  AccountPage(
-      callback: () {
-        getprofile();
-        setState(() {});
-      }
-    );
+    if (currScreen == 3) return  AccountPage();
     return Container(
       height: 300,
       // color: Colors.grey,
@@ -348,18 +334,36 @@ class _HomePageState extends State<HomePage> {
         children: <Widget>[
           DrawerHeader(
             decoration: BoxDecoration(),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
+            child: context.read<LoginProvider>().isLogged
+                ? Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
                 CircleAvatar(
                   radius: 32,
                   child: Icon(Icons.person_3_outlined),
                 ),
                     SizedBox(height: 8,),
-                    Text(profile.firstname ?? " ",style: TextStyle(fontSize: 16),),
-                Text(profile.email ?? " ",style: TextStyle(fontSize: 14),),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          context.watch<ProfileProvider>().profile.firstname ?? "",
+                          // profile.firstname ?? " ",
+                          style: TextStyle(fontSize: 16),),
+                        SizedBox(width: 5,),
+                        Text(
+                          context.watch<ProfileProvider>().profile.lastname ?? "",
+                          // profile.email ?? " ",
+                          style: TextStyle(fontSize: 16),),
+                      ],
+                    ),
+                Text(
+                  context.watch<ProfileProvider>().profile.email ?? "",
+                  // profile.email ?? " ",
+                  style: TextStyle(fontSize: 14),),
               ],
-            ),
+            )
+                : Text(""),
           ),
           ListTile(
             title: Text('Home',style: TextStyle(fontSize: 15),),
@@ -406,19 +410,20 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           // Divider(),
-          (InMemory.isLogged == true)
+          // (InMemory.isLogged == true)
+            (context.watch<LoginProvider>().isLogged)
               ?  ListTile(
-            title: Text('Logout',style: TextStyle(fontSize: 15),),
-            trailing: Icon(FontAwesomeIcons.arrowRightFromBracket,size: 16,
-                color:Colors.red.shade800),
-            onTap: () {
+               title: Text('Logout',style: TextStyle(fontSize: 15),),
+               trailing: Icon(FontAwesomeIcons.arrowRightFromBracket,size: 16,
+                   color:Colors.red.shade800),
+               onTap: () {
                 showLogoutConfirmation(context);
             },
           )
               : ListTile(
-            title: Text('Login',style: TextStyle(fontSize: 15),),
-            trailing: Icon(FontAwesomeIcons.rightToBracket,size: 16,),
-            onTap: () {
+               title: Text('Login',style: TextStyle(fontSize: 15),),
+               trailing: Icon(FontAwesomeIcons.rightToBracket,size: 16,),
+               onTap: () {
               Navigator.push(context, MaterialPageRoute(builder
                   : (context) => LoginPage()));
             },
@@ -576,11 +581,13 @@ class _HomePageState extends State<HomePage> {
                 TextButton(
                   child: Text('Yes'),
                   onPressed: () {
-                    InMemory().logout().then((value) {
-                      widget.callback();
-                      setState(() {});
-                      Navigator.pop(context);
-                    });
+                    // InMemory().logout().then((value) {
+                    //   widget.callback();
+                    //   setState(() {});
+                    //   Navigator.pop(context);
+                    // });
+                    context.read<LoginProvider>().logout();
+                    Navigator.pop(context);
                     // Close the dialog
                   },
                 ),
@@ -591,24 +598,26 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-  void logout(){
-    print("logout Called");
-    print('Session ID: ${SessionId}');
-   final client = RestClient(Dio());
-    client.logout("123",  SessionId!)
-   .then((value) {
-     print(SessionId);
-     if(value.success == 1) {
-       print("logout");
-     }
-     else{
-       print("fail");
-     }
-     setState(() {
 
-     });
-    });
-  }
+  // void logout(){
+  //   print("logout Called");
+  //   print('Session ID: ${SessionId}');
+  //  final client = RestClient(Dio());
+  //   client.logout("123",  SessionId!)
+  //  .then((value) {
+  //    print(SessionId);
+  //    if(value.success == 1) {
+  //      print("logout");
+  //    }
+  //    else{
+  //      print("fail");
+  //    }
+  //    setState(() {
+  //
+  //    });
+  //   });
+  // }
+
   void showLoginConfirmation(BuildContext context,) {
     showDialog(
       context: context,

@@ -43,22 +43,22 @@ class _CheckOutPageState extends State<CheckOutPage> {
 
   @override
   void initState() {
-    fetchLogged();
+    // fetchLogged();
     super.initState();
   }
 
-  void fetchLogged() {
-    print("fetching logged");
-    InMemory().init().then((value) {
-      // if (isDisposed) return;
-      if (InMemory.isLogged) {
-        logStatus = 1;
-      } else {
-        logStatus = 2;
-      }
-      setState(() {});
-    });
-  }
+  // void fetchLogged() {
+  //   print("fetching logged");
+  //   InMemory().init().then((value) {
+  //     // if (isDisposed) return;
+  //     if (InMemory.isLogged) {
+  //       logStatus = 1;
+  //     } else {
+  //       logStatus = 2;
+  //     }
+  //     setState(() {});
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -834,7 +834,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
   List<AddressDetails> addresses = [];
    TextEditingController firstnameController = TextEditingController();
    TextEditingController lastnameController  = TextEditingController();
-  bool loaded = false;
+   bool loaded = false;
 
   @override
   void initState() {
@@ -867,7 +867,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       });
     });
   }
-
 
   Future<void> paytm() async {
     print("Payment called");
@@ -911,8 +910,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
          padding:  EdgeInsets.all(10.0),
          child: Container(
            child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
             // Row(
             //   children: [
             //     SizedBox(width: 10,),
@@ -950,7 +949,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
               _buildAddressTextField("Full Name", (i.firstname + i.lastname)),
             for (var i in addresses)
               _buildAddressTextField("Company Name", i.company),
-              // _buildAddressTextField("Company Name", address.co),
+             // _buildAddressTextField("Company Name", address.co),
             // SizedBox(height: 8,),
             // Row(
             //   children: [
@@ -1061,6 +1060,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       ),
     );
   }
+
   Widget _buildAddressTextField(String label, String initialValue) {
     return Column(
       children: [

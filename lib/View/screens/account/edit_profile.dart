@@ -1,20 +1,16 @@
-import 'dart:convert';
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:opencart_ecommapp1/Models/RestApiClient.dart';
-import 'package:dio/dio.dart';
-import 'package:opencart_ecommapp1/Utils/AppConstants.dart';
-import 'package:opencart_ecommapp1/Utils/InMemory.dart';
-
-import '../../../Models/Account/account.dart';
+import 'package:opencart_ecommapp1/View/screens/account/Account.dart';
+import 'package:provider/provider.dart';
+import '../../../Provider/get_profile_provider.dart';
 
 class EditPage extends StatefulWidget {
    EditPage({Key? key,
-     this.callback, this.first_name, this.last_name,
+     this.first_name, this.last_name,
      this.phone, this.email}) : super(key: key);
-   final callback;
    final first_name;
    final last_name;
    final phone;
@@ -90,7 +86,6 @@ class _EditPageState extends State<EditPage> {
     ),
     );
   }
-
   Future<void> pickImage(ImageSource imageType) async {
     final ImagePicker _picker = ImagePicker();
     try {
@@ -106,55 +101,17 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  // Future<void> selectDate(BuildContext context) async {
-  //   DateTime currentDate = DateTime.now();
-  //
-  //   DateTime? selectedDate = await showDatePicker(
-  //     context: context,
-  //     initialDate: currentDate,
-  //     firstDate: currentDate.subtract(Duration(days: 365)), // One year ago from now
-  //     lastDate: currentDate.add(Duration(days: 365)), // One year from now
-  //     builder: (BuildContext context, Widget? child) {
-  //       return Theme(
-  //         data: ThemeData.light().copyWith(
-  //           primaryColor: Colors.blue, // Set the primary color of the date picker header
-  //           hintColor: Colors.blue, // Set the accent color of the buttons
-  //           colorScheme: ColorScheme.light(primary: Colors.blue), // Set the colors for the buttons
-  //           buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary), // Set the button text color
-  //         ),
-  //         child: child!,
-  //       );
-  //     },
-  //   );
-  //
-  //   if (selectedDate != null && selectedDate != currentDate) {
-  //     // Date selected
-  //     // You can format and use the selected date as needed
-  //     String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-  //     dobController.text = formattedDate;
-  //   }
-  // }
-
   final _formKey = GlobalKey<FormState>();
   String? Statecode = "Madhaya Paradesh";
   String? Citycode = "Balaghat";
   String dropdownvalue2 = "Madhaya Paradesh";
   // String val = "Select State";
-  List state = [
-    "M.P.",
-    "C.G.",
-    "J.D.",
-  ];
+  List state = ["M.P.", "C.G.", "J.D.",];
   var listofStates = [];
   var listofstatecode = [];
   bool loaded = false;
   String dropdownvalue3 = "Balaghat";
-  List  city = [
-    "Durg",
-    "Bhilai",
-    "JAbalpur",
-    "Balaghat",
-  ];
+  List  city = ["Durg", "Bhilai","JAbalpur", "Balaghat",];
   var listofcity = [];
   var listofcitycode = [];
   // var listofstateCode = [];
@@ -169,29 +126,6 @@ class _EditPageState extends State<EditPage> {
      emailController.text = widget.email ?? "";
      telephoneController.text = widget.phone ?? "";
    }
-
-  Future<void> update() async {
-    print("Update called");
-    final client = RestClient(Dio());
-    SessionId = await InMemory().getSession();
-    client.update_profile("123", SessionId, "application/json",
-        'PHPSESSID=$SessionId; currency=USD; default=$SessionId; language=en-gb',
-        json.encode({
-          "firstname":  firstnameController.text,
-          "lastname": lastnameController.text,
-          "email": emailController.text,
-          "telephone": telephoneController.text,
-        })
-    ).then((value) {
-      if (value.success == 1){
-        print("object");
-        // Profile profile = Profile();
-        widget.callback();
-        Navigator.pop(context);
-      }else{}
-      setState(() {});
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,157 +183,169 @@ class _EditPageState extends State<EditPage> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding:  EdgeInsets.all(10.0),
-                  child: Container(
-                    child: Column(
-                      // mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Row(
+                 Consumer<ProfileProvider>(
+                  builder: (context, ProfileProvider, child) {
+                    return Padding(
+                      padding:  EdgeInsets.all(10.0),
+                      child: Container(
+                        child: Column(
+                          // mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(width: 10,),
-                            Text("First Name"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 2,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: firstnameController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "First Name",
+                            Row(
+                              children: [
+                                SizedBox(width: 10,),
+                                Text("First Name"),
+                              ],
+                            ),
+                            Container(
+                              height: 45,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        offset: Offset(1,1),
+                                        blurRadius: 2,
+                                        color: Colors.grey
+                                    ),
+                                  ]
+                              ),
+                              child: TextFormField(
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Required field';
+                                  }
+                                  return null;
+                                },
+                                controller: firstnameController,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                                  // labelText: "First Name",
 
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        SizedBox(height: 8,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("Last Name"),
+                            SizedBox(height: 8,),
+                            Row(
+                              children: [
+                                SizedBox(width: 10,),
+                                Text("Last Name"),
+                              ],
+                            ),
+                            Container(
+                              height: 45,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        offset: Offset(1,1),
+                                        blurRadius: 1,
+                                        color: Colors.grey
+                                    ),
+                                  ]
+                              ),
+                              child: TextFormField(
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Required field';
+                                  }
+                                  return null;
+                                },
+                                controller: lastnameController,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                                  // labelText: "Last Name"
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8,),
+                            Row(
+                              children: [
+                                SizedBox(width: 10,),
+                                Text("Email"),
+                              ],
+                            ),
+                            Container(
+                              height: 45,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        offset: Offset(1,1),
+                                        blurRadius: 1,
+                                        color: Colors.grey
+                                    ),
+                                  ]
+                              ),
+                              child: TextFormField(
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Required field';
+                                  }
+                                  return null;
+                                },
+                                controller: emailController,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                                  // labelText: "Last Name"
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8,),
+                            Row(
+                              children: [
+                                SizedBox(width: 10,),
+                                Text("Telephone"),
+                              ],
+                            ),
+                            Container(
+                              height: 45,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        offset: Offset(1,1),
+                                        blurRadius: 1,
+                                        color: Colors.grey
+                                    ),
+                                  ]
+                              ),
+                              child: TextFormField(
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Required field';
+                                  }
+                                  return null;
+                                },
+                                controller: telephoneController,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(top: 15,left: 15.0),
+                                  // labelText: "Last Name"
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: lastnameController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "Last Name"
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("Email"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "Last Name"
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8,),
-                        Row(
-                          children: [
-                            SizedBox(width: 10,),
-                            Text("Telephone"),
-                          ],
-                        ),
-                        Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                    offset: Offset(1,1),
-                                    blurRadius: 1,
-                                    color: Colors.grey
-                                ),
-                              ]
-                          ),
-                          child: TextFormField(
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Required field';
-                              }
-                              return null;
-                            },
-                            controller: telephoneController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(top: 15,left: 15.0),
-                              // labelText: "Last Name"
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  }
                 ),
                 SizedBox(height: 15,),
                 ElevatedButton(
                     onPressed: (){
                       if(_formKey.currentState!.validate()){
-                        update();
+                        // update();
+                        Provider.of<ProfileProvider>(context, listen: false)
+                            .update(
+                          firstnameController.text,
+                          lastnameController.text,
+                          emailController.text,
+                          telephoneController.text,
+                        );
+                        Navigator.pop(context);
                       }
                     },
                     child: Text("Save"))
@@ -410,4 +356,5 @@ class _EditPageState extends State<EditPage> {
       ),
     );
   }
+
 }

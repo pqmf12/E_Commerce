@@ -10,6 +10,7 @@ import '../../../Product/product_details.dart';
 import '../../../Provider/wishlist_provider.dart';
 import '../../../Utils/InMemory.dart';
 import '../../Auth/login.dart';
+import '../auth/Auth_Provider/login_provider.dart';
 
 class ManufacturerProducts extends StatefulWidget {
   const ManufacturerProducts({Key? key, required this.id, required this.title}) : super(key: key);
@@ -133,7 +134,9 @@ class _ManufacturerProductsState extends State<ManufacturerProducts> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     IconButton(onPressed: ( ){
-                                      if (InMemory.isLogged == true){
+                                      // if (InMemory.isLogged == true)
+                                      if (context.watch<LoginProvider>().isLogged)
+                                      {
                                         context.read<WishlistProvider>().increment(i.product_id);
                                       } else {
                                         showLoginConfirmation(context,i.product_id);
