@@ -8,7 +8,7 @@ on:
       - main
       - master
       - develop
-name:
+name: "Build & Release"
 jobs:
   build:
     name: Build & Release
@@ -28,5 +28,5 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/apk/debug/*"
-          tag: v1.0.${{github.run_number}}
-          token: ${{secrets.TOKEN}}
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
